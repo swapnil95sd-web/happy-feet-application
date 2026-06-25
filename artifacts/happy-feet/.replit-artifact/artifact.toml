@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Happy Feet Dance Academy"
+version = "1.0.0"
+id = "artifacts/happy-feet"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23556
+
+[services.development]
+run = "pnpm --filter @workspace/happy-feet run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/happy-feet", "run", "build" ]
+publicDir = "artifacts/happy-feet/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23556"
+BASE_PATH = "/"

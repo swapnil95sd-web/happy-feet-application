@@ -3,20 +3,32 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Happy Feet Dance Academy API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: classes
+    description: Dance class operations
+  - name: students
+    description: Student operations
+  - name: enrollments
+    description: Enrollment/booking operations
+  - name: announcements
+    description: Announcement operations
+  - name: videos
+    description: Practice video operations
+  - name: dashboard
+    description: Dashboard summary operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +36,378 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /classes:
+    get:
+      operationId: listClasses
+      tags: [classes]
+      summary: List all dance classes
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of classes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DanceClass"
+    post:
+      operationId: createClass
+      tags: [classes]
+      summary: Create a new dance class
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DanceClassInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DanceClass"
+
+  /classes/{id}:
+    get:
+      operationId: getClass
+      tags: [classes]
+      summary: Get a dance class by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dance class
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DanceClass"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateClass
+      tags: [classes]
+      summary: Update a dance class
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DanceClassUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DanceClass"
+    delete:
+      operationId: deleteClass
+      tags: [classes]
+      summary: Delete a dance class
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /students:
+    get:
+      operationId: listStudents
+      tags: [students]
+      summary: List all students
+      responses:
+        "200":
+          description: List of students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Student"
+    post:
+      operationId: createStudent
+      tags: [students]
+      summary: Register a new student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+
+  /students/{id}:
+    get:
+      operationId: getStudent
+      tags: [students]
+      summary: Get student by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "404":
+          description: Not found
+
+  /students/{id}/enrollments:
+    get:
+      operationId: getStudentEnrollments
+      tags: [students]
+      summary: Get enrollments for a student
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of enrollments with class details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnrollmentWithClass"
+
+  /enrollments:
+    get:
+      operationId: listEnrollments
+      tags: [enrollments]
+      summary: List all enrollments
+      responses:
+        "200":
+          description: List of enrollments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnrollmentWithDetails"
+    post:
+      operationId: createEnrollment
+      tags: [enrollments]
+      summary: Book a student into a class
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnrollmentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+        "409":
+          description: Already enrolled or class full
+
+  /enrollments/{id}:
+    patch:
+      operationId: updateEnrollment
+      tags: [enrollments]
+      summary: Update enrollment status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnrollmentUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+
+  /announcements:
+    get:
+      operationId: listAnnouncements
+      tags: [announcements]
+      summary: List all announcements
+      responses:
+        "200":
+          description: List of announcements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Announcement"
+    post:
+      operationId: createAnnouncement
+      tags: [announcements]
+      summary: Post a new announcement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Announcement"
+
+  /announcements/{id}:
+    delete:
+      operationId: deleteAnnouncement
+      tags: [announcements]
+      summary: Delete an announcement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /videos:
+    get:
+      operationId: listVideos
+      tags: [videos]
+      summary: List practice videos
+      parameters:
+        - name: classId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of videos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Video"
+    post:
+      operationId: createVideo
+      tags: [videos]
+      summary: Upload a practice video link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+
+  /videos/{id}:
+    delete:
+      operationId: deleteVideo
+      tags: [videos]
+      summary: Delete a video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get admin dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/recent-enrollments:
+    get:
+      operationId: getRecentEnrollments
+      tags: [dashboard]
+      summary: Get recent enrollments for admin
+      responses:
+        "200":
+          description: Recent enrollments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnrollmentWithDetails"
+
+  /dashboard/schedule:
+    get:
+      operationId: getWeeklySchedule
+      tags: [dashboard]
+      summary: Get this week's class schedule
+      responses:
+        "200":
+          description: Weekly schedule
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScheduleEntry"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +418,400 @@ components:
       required:
         - status
 
+    DanceClass:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        style:
+          type: string
+        description:
+          type: string
+        instructor:
+          type: string
+        location:
+          type: string
+        scheduleDay:
+          type: string
+        scheduleTime:
+          type: string
+        price:
+          type: number
+        pricePeriod:
+          type: string
+        duration:
+          type: string
+        ageGroup:
+          type: string
+        category:
+          type: string
+        capacity:
+          type: integer
+        spotsAvailable:
+          type: integer
+        colorScheme:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - style
+        - description
+        - instructor
+        - location
+        - scheduleDay
+        - scheduleTime
+        - price
+        - pricePeriod
+        - duration
+        - ageGroup
+        - category
+        - capacity
+        - spotsAvailable
+        - colorScheme
+        - createdAt
+
+    DanceClassInput:
+      type: object
+      properties:
+        name:
+          type: string
+        style:
+          type: string
+        description:
+          type: string
+        instructor:
+          type: string
+        location:
+          type: string
+        scheduleDay:
+          type: string
+        scheduleTime:
+          type: string
+        price:
+          type: number
+        pricePeriod:
+          type: string
+        duration:
+          type: string
+        ageGroup:
+          type: string
+        category:
+          type: string
+        capacity:
+          type: integer
+        spotsAvailable:
+          type: integer
+        colorScheme:
+          type: string
+      required:
+        - name
+        - style
+        - description
+        - instructor
+        - location
+        - scheduleDay
+        - scheduleTime
+        - price
+        - pricePeriod
+        - duration
+        - ageGroup
+        - category
+        - capacity
+        - spotsAvailable
+        - colorScheme
+
+    DanceClassUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        style:
+          type: string
+        description:
+          type: string
+        instructor:
+          type: string
+        location:
+          type: string
+        scheduleDay:
+          type: string
+        scheduleTime:
+          type: string
+        price:
+          type: number
+        pricePeriod:
+          type: string
+        duration:
+          type: string
+        ageGroup:
+          type: string
+        category:
+          type: string
+        capacity:
+          type: integer
+        spotsAvailable:
+          type: integer
+        colorScheme:
+          type: string
+
+    Student:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        studentType:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - firstName
+        - lastName
+        - email
+        - phone
+        - studentType
+        - createdAt
+
+    StudentInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        studentType:
+          type: string
+      required:
+        - firstName
+        - lastName
+        - email
+        - phone
+        - studentType
+
+    Enrollment:
+      type: object
+      properties:
+        id:
+          type: integer
+        studentId:
+          type: integer
+        classId:
+          type: integer
+        status:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - studentId
+        - classId
+        - status
+        - createdAt
+
+    EnrollmentInput:
+      type: object
+      properties:
+        studentId:
+          type: integer
+        classId:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        studentType:
+          type: string
+      required:
+        - classId
+        - firstName
+        - lastName
+        - email
+        - phone
+        - studentType
+
+    EnrollmentUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+
+    EnrollmentWithClass:
+      type: object
+      properties:
+        id:
+          type: integer
+        studentId:
+          type: integer
+        classId:
+          type: integer
+        status:
+          type: string
+        createdAt:
+          type: string
+        class:
+          $ref: "#/components/schemas/DanceClass"
+      required:
+        - id
+        - studentId
+        - classId
+        - status
+        - createdAt
+        - class
+
+    EnrollmentWithDetails:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        createdAt:
+          type: string
+        student:
+          $ref: "#/components/schemas/Student"
+        class:
+          $ref: "#/components/schemas/DanceClass"
+      required:
+        - id
+        - status
+        - createdAt
+        - student
+        - class
+
+    Announcement:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        message:
+          type: string
+        publishedAt:
+          type: string
+      required:
+        - id
+        - title
+        - message
+        - publishedAt
+
+    AnnouncementInput:
+      type: object
+      properties:
+        title:
+          type: string
+        message:
+          type: string
+      required:
+        - title
+        - message
+
+    Video:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        url:
+          type: string
+        description:
+          type: ["string", "null"]
+        classId:
+          type: ["integer", "null"]
+        className:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - url
+        - description
+        - classId
+        - className
+        - createdAt
+
+    VideoInput:
+      type: object
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+        description:
+          type: string
+        classId:
+          type: integer
+      required:
+        - title
+        - url
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalStudents:
+          type: integer
+        activeClasses:
+          type: integer
+        totalEnrollments:
+          type: integer
+        announcementsThisMonth:
+          type: integer
+        newStudentsThisMonth:
+          type: integer
+        classesWithWaitlist:
+          type: integer
+      required:
+        - totalStudents
+        - activeClasses
+        - totalEnrollments
+        - announcementsThisMonth
+        - newStudentsThisMonth
+        - classesWithWaitlist
+
+    ScheduleEntry:
+      type: object
+      properties:
+        day:
+          type: string
+        className:
+          type: string
+        time:
+          type: string
+        location:
+          type: string
+        instructor:
+          type: string
+        enrolledCount:
+          type: integer
+        capacity:
+          type: integer
+      required:
+        - day
+        - className
+        - time
+        - location
+        - instructor
+        - enrolledCount
+        - capacity
