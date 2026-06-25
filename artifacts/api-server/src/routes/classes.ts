@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
-import { db, classesTable } from "@workspace/db";
+import { db, classesTable, enrollmentsTable, studentsTable } from "@workspace/db";
 import {
   CreateClassBody,
   UpdateClassBody,
