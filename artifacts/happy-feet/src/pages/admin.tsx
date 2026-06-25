@@ -32,7 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import {
   Users, BookOpen, CalendarDays, Megaphone, Trash2, Video,
-  Plus, LayoutDashboard, UserCheck, Settings
+  Plus, LayoutDashboard, UserCheck, Settings, Loader2
 } from "lucide-react";
 
 const NAV_ITEMS = [

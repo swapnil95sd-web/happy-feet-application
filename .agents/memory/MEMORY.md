@@ -1,0 +1,1 @@
+- [Replit Auth setup](replit-auth-setup.md) — auth fully wired; replit-auth-web needs composite+vite/client tsconfig to typecheck.

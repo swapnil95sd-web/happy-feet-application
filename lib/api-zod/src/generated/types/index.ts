@@ -8,6 +8,10 @@
 
 export * from './announcement';
 export * from './announcementInput';
+export * from './authorizationSessionHeaderParameter';
+export * from './authUser';
+export * from './authUserEnvelope';
+export * from './beginBrowserLoginParams';
 export * from './danceClass';
 export * from './danceClassInput';
 export * from './danceClassUpdate';
@@ -17,9 +21,14 @@ export * from './enrollmentInput';
 export * from './enrollmentUpdate';
 export * from './enrollmentWithClass';
 export * from './enrollmentWithDetails';
+export * from './errorEnvelope';
+export * from './handleBrowserLoginCallbackParams';
 export * from './healthStatus';
 export * from './listClassesParams';
 export * from './listVideosParams';
+export * from './logoutSuccess';
+export * from './mobileTokenExchangeRequest';
+export * from './mobileTokenExchangeSuccess';
 export * from './scheduleEntry';
 export * from './student';
 export * from './studentInput';
