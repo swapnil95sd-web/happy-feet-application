@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   useGetDashboardSummary,
   useGetRecentEnrollments,
@@ -369,30 +369,8 @@ export default function Admin() {
                   </CardContent>
                 </Card>
 
-                {/* Existing classes */}
-                <Card>
-                  <CardHeader><CardTitle className="text-base font-semibold text-secondary">Current Classes</CardTitle></CardHeader>
-                  <CardContent>
-                    {classes && classes.length > 0 ? (
-                      <div className="space-y-2">
-                        {classes.map((c) => (
-                          <div key={c.id} className="flex items-center justify-between py-2 border-b last:border-0" data-testid={`class-row-${c.id}`}>
-                            <div>
-                              <p className="font-medium text-secondary text-sm">{c.name}</p>
-                              <p className="text-xs text-muted-foreground">{c.scheduleDay} {c.scheduleTime} · {c.location}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-secondary">${c.price}</span>
-                              <Badge variant="outline" className="text-xs">{c.spotsAvailable} spots</Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No classes yet.</p>
-                    )}
-                  </CardContent>
-                </Card>
+                {/* Existing classes — expandable */}
+                <ExpandableClassList classes={classes ?? []} />
               </div>
             )}
 
@@ -551,5 +529,183 @@ export default function Admin() {
         </div>
       </div>
     </div>
+  );
+}
+
+type ClassEnrollment = {
+  id: number;
+  status: string;
+  createdAt: string;
+  student: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    studentType: string;
+    createdAt: string;
+  };
+};
+
+function ExpandableClassList({ classes }: { classes: any[] }) {
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [enrollments, setEnrollments] = useState<Record<number, ClassEnrollment[]>>({});
+  const [loading, setLoading] = useState<Record<number, boolean>>({});
+  const { toast } = useToast();
+
+  const toggleClass = useCallback(async (id: number) => {
+    if (expandedId === id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(id);
+    if (enrollments[id]) return;
+    setLoading((l) => ({ ...l, [id]: true }));
+    try {
+      const res = await fetch(`/api/classes/${id}/enrollments`);
+      const data: ClassEnrollment[] = await res.json();
+      setEnrollments((e) => ({ ...e, [id]: data }));
+    } catch {
+      toast({ title: "Could not load students.", variant: "destructive" });
+    } finally {
+      setLoading((l) => ({ ...l, [id]: false }));
+    }
+  }, [expandedId, enrollments, toast]);
+
+  const updateStatus = async (enrollmentId: number, classId: number, newStatus: string) => {
+    try {
+      await fetch(`/api/enrollments/${enrollmentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setEnrollments((e) => ({
+        ...e,
+        [classId]: (e[classId] ?? []).map((en) =>
+          en.id === enrollmentId ? { ...en, status: newStatus } : en
+        ),
+      }));
+      toast({ title: "Status updated." });
+    } catch {
+      toast({ title: "Could not update status.", variant: "destructive" });
+    }
+  };
+
+  const STATUS_CYCLE: Record<string, string> = {
+    confirmed: "waitlisted",
+    waitlisted: "cancelled",
+    cancelled: "confirmed",
+  };
+
+  const STATUS_STYLE: Record<string, string> = {
+    confirmed: "bg-green-100 text-green-800 border-green-200",
+    waitlisted: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    cancelled: "bg-red-100 text-red-800 border-red-200",
+  };
+
+  if (!classes.length) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">No classes yet.</CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base font-semibold text-secondary">Current Classes</CardTitle>
+        <p className="text-xs text-muted-foreground mt-0.5">Click a class name to see enrolled students.</p>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div>
+          {classes.map((c, idx) => {
+            const isOpen = expandedId === c.id;
+            const rows = enrollments[c.id] ?? [];
+            const isLoading = loading[c.id];
+            return (
+              <div key={c.id} className={idx < classes.length - 1 ? "border-b" : ""}>
+                {/* Class row — clickable */}
+                <button
+                  className="w-full flex items-center justify-between px-6 py-3.5 text-left transition-colors hover:bg-muted/40"
+                  onClick={() => toggleClass(c.id)}
+                  data-testid={`class-row-${c.id}`}
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-secondary text-sm truncate">{c.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {c.scheduleDay} {c.scheduleTime} · {c.location}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0 ml-4">
+                    <span className="text-sm font-bold text-secondary">${c.price}</span>
+                    <Badge variant="outline" className="text-xs">{c.capacity - c.spotsAvailable}/{c.capacity}</Badge>
+                    <svg
+                      className="w-4 h-4 text-muted-foreground transition-transform duration-200"
+                      style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </button>
+
+                {/* Expanded student list */}
+                {isOpen && (
+                  <div className="px-6 pb-4 pt-1" style={{ background: "rgba(58,31,58,0.02)" }}>
+                    {isLoading ? (
+                      <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin" /> Loading students...
+                      </div>
+                    ) : rows.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-3">No students enrolled yet.</p>
+                    ) : (
+                      <div className="rounded-xl overflow-hidden border mt-1">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr style={{ background: "rgba(58,31,58,0.05)" }}>
+                              <th className="text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Student</th>
+                              <th className="text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground hidden sm:table-cell">Email</th>
+                              <th className="text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground hidden md:table-cell">Phone</th>
+                              <th className="text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground hidden sm:table-cell">Enrolled</th>
+                              <th className="text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map((en, i) => (
+                              <tr key={en.id} className={i < rows.length - 1 ? "border-t" : ""}>
+                                <td className="px-4 py-2.5 font-medium text-secondary whitespace-nowrap">
+                                  {en.student.firstName} {en.student.lastName}
+                                  <span className="ml-1.5 text-xs text-muted-foreground capitalize hidden sm:inline">
+                                    ({en.student.studentType})
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5 text-muted-foreground hidden sm:table-cell">{en.student.email}</td>
+                                <td className="px-4 py-2.5 text-muted-foreground hidden md:table-cell">{en.student.phone}</td>
+                                <td className="px-4 py-2.5 text-muted-foreground hidden sm:table-cell text-xs">
+                                  {new Date(en.createdAt).toLocaleDateString()}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <button
+                                    title="Click to cycle status"
+                                    onClick={() => updateStatus(en.id, c.id, STATUS_CYCLE[en.status] ?? "confirmed")}
+                                    className={`text-xs font-semibold capitalize px-2.5 py-1 rounded-full border cursor-pointer transition-all hover:opacity-80 ${STATUS_STYLE[en.status] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}
+                                  >
+                                    {en.status}
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

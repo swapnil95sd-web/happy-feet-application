@@ -89,4 +89,27 @@ router.delete("/classes/:id", async (req, res) => {
   res.status(204).send();
 });
 
+router.get("/classes/:id/enrollments", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const rows = await db
+    .select()
+    .from(enrollmentsTable)
+    .innerJoin(studentsTable, eq(enrollmentsTable.studentId, studentsTable.id))
+    .where(eq(enrollmentsTable.classId, id))
+    .orderBy(enrollmentsTable.createdAt);
+
+  res.json(
+    rows.map((r) => ({
+      id: r.enrollments.id,
+      status: r.enrollments.status,
+      createdAt: r.enrollments.createdAt.toISOString(),
+      student: { ...r.students, createdAt: r.students.createdAt.toISOString() },
+    }))
+  );
+});
+
 export default router;
