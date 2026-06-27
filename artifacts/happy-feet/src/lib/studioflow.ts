@@ -418,28 +418,31 @@ export async function saveHomepageContent(content: HomepageContent) {
 
 export async function saveClass(input: Partial<DanceClass>) {
   if (!supabase) throw new Error("Supabase is not configured.");
-  const payload = {
-    id: input.id?.startsWith("demo-") ? undefined : input.id,
+  const schedule = [input.scheduleDay, input.scheduleTime].filter(Boolean).join(" ");
+  const payload: Record<string, unknown> = {
     title: input.name,
-    name: input.name,
     style: input.style,
     description: input.description,
-    instructor_name: input.instructor,
     location: input.location,
-    schedule_day: input.scheduleDay,
-    schedule_time: input.scheduleTime,
+    schedule,
     price: input.price,
-    price_period: input.pricePeriod,
-    duration: input.duration,
     age_group: input.ageGroup,
-    category: input.category,
+    level: input.category,
     capacity: input.capacity,
-    spots_available: input.spotsAvailable,
     featured: input.featured,
     status: input.status,
     image_url: input.imageUrl,
   };
-  const { error } = await supabase.from("classes").upsert(payload).select().single();
+
+  Object.keys(payload).forEach((key) => {
+    if (payload[key] === undefined || payload[key] === "") delete payload[key];
+  });
+
+  const existingId = input.id && !input.id.startsWith("demo-") ? input.id : null;
+  const result = existingId
+    ? await supabase.from("classes").update(payload).eq("id", existingId).select().single()
+    : await supabase.from("classes").insert(payload).select().single();
+  const { error } = result;
   if (error) throw error;
 }
 
