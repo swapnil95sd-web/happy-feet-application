@@ -7,20 +7,20 @@ import { Navigation } from "@/components/layout";
 import Home from "@/pages/home";
 import Portal from "@/pages/portal";
 import Admin from "@/pages/admin";
-import { useAuth } from "@workspace/replit-auth-web";
+import { AuthProvider, type StudioRole, useAuth } from "@/lib/supabase";
+import { useState } from "react";
+import type { ComponentType, FormEvent } from "react";
 
 const queryClient = new QueryClient();
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL as string | undefined;
-
 function ProtectedRoute({
   component: Component,
-  adminOnly = false,
+  roles,
 }: {
-  component: React.ComponentType;
-  adminOnly?: boolean;
+  component: ComponentType;
+  roles?: StudioRole[];
 }) {
-  const { user, isLoading, isAuthenticated, login } = useAuth();
+  const { isLoading, isAuthenticated, role, isSupabaseConfigured } = useAuth();
 
   if (isLoading) {
     return (
@@ -31,27 +31,10 @@ function ProtectedRoute({
   }
 
   if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4">
-        <div className="text-center max-w-sm">
-          <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
-            Sign in to continue
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            Please log in to access this page.
-          </p>
-        </div>
-        <button
-          onClick={login}
-          className="px-8 py-2.5 rounded-full bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
-        >
-          Log in
-        </button>
-      </div>
-    );
+    return <SignInPanel isSupabaseConfigured={isSupabaseConfigured} />;
   }
 
-  if (adminOnly && ADMIN_EMAIL && user?.email !== ADMIN_EMAIL) {
+  if (roles && (!role || !roles.includes(role))) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
         <div className="text-center max-w-sm">
@@ -59,7 +42,7 @@ function ProtectedRoute({
             Access denied
           </h2>
           <p className="text-muted-foreground text-sm">
-            This page is only accessible to the studio director.
+            Your account does not have permission to open this dashboard.
           </p>
         </div>
       </div>
@@ -67,6 +50,67 @@ function ProtectedRoute({
   }
 
   return <Component />;
+}
+
+function SignInPanel({ isSupabaseConfigured }: { isSupabaseConfigured: boolean }) {
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const { signInWithEmail } = useAuth();
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    setIsSending(true);
+    try {
+      await signInWithEmail(email);
+      setMessage("Check your email for the sign-in link.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send the sign-in link.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4">
+      <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border bg-card p-6 shadow-sm">
+        <div className="text-center mb-5">
+          <h2 className="font-serif text-2xl font-bold text-foreground mb-2">Sign in to continue</h2>
+          <p className="text-muted-foreground text-sm">
+            Use the email connected to your StudioFlow profile.
+          </p>
+        </div>
+        {!isSupabaseConfigured ? (
+          <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">
+            Supabase is not configured yet. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to enable sign-in.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@example.com"
+              className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+              required
+            />
+            <button
+              type="submit"
+              disabled={isSending}
+              className="w-full rounded-full bg-primary px-8 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+            >
+              {isSending ? "Sending..." : "Email me a sign-in link"}
+            </button>
+            {message && <p className="text-center text-sm text-green-700">{message}</p>}
+            {error && <p className="text-center text-sm text-destructive">{error}</p>}
+          </div>
+        )}
+      </form>
+    </div>
+  );
 }
 
 function Router() {
@@ -77,7 +121,7 @@ function Router() {
         <ProtectedRoute component={Portal} />
       </Route>
       <Route path="/admin">
-        <ProtectedRoute component={Admin} adminOnly />
+        <ProtectedRoute component={Admin} roles={["admin"]} />
       </Route>
       <Route component={NotFound} />
     </Switch>
@@ -88,14 +132,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <div className="min-h-[100dvh] flex flex-col">
-            <Navigation />
-            <main className="flex-1">
-              <Router />
-            </main>
-          </div>
-        </WouterRouter>
+        <AuthProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <div className="min-h-[100dvh] flex flex-col">
+              <Navigation />
+              <main className="flex-1">
+                <Router />
+              </main>
+            </div>
+          </WouterRouter>
+        </AuthProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

@@ -15,11 +15,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "@workspace/replit-auth-web";
+import { useAuth } from "@/lib/supabase";
 
 export function Navigation() {
   const [location] = useLocation();
-  const { user, isAuthenticated, isLoading, login, logout } = useAuth();
+  const { user, profile, isAuthenticated, isLoading, logout } = useAuth();
 
   const links = [
     { href: "/", label: "Classes" },
@@ -27,8 +27,15 @@ export function Navigation() {
     { href: "/admin", label: "Admin" },
   ];
 
-  const initials = user
-    ? `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "U"
+  const displayName = profile?.fullName ?? user?.email ?? "StudioFlow user";
+  const initials = displayName
+    ? displayName
+        .split(/\s|@/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase() || "U"
     : "U";
 
   return (
@@ -67,7 +74,7 @@ export function Navigation() {
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                     <Avatar className="h-8 w-8">
-                      {user?.profileImageUrl && <AvatarImage src={user.profileImageUrl} alt={user.firstName ?? "User"} />}
+                      {user?.user_metadata?.avatar_url && <AvatarImage src={user.user_metadata.avatar_url} alt={displayName} />}
                       <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-semibold">
                         {initials}
                       </AvatarFallback>
@@ -76,8 +83,8 @@ export function Navigation() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel className="font-normal">
-                    <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
-                    {user?.email && <p className="text-xs text-muted-foreground truncate">{user.email}</p>}
+                    <p className="text-sm font-medium">{displayName}</p>
+                    {profile?.role && <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
@@ -87,13 +94,10 @@ export function Navigation() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <button
-                onClick={login}
-                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-              >
+              <Link href="/portal" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                 <User className="h-4 w-4" />
                 Log in
-              </button>
+              </Link>
             )
           )}
         </nav>
@@ -127,12 +131,12 @@ export function Navigation() {
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        {user?.profileImageUrl && <AvatarImage src={user.profileImageUrl} />}
+                        {user?.user_metadata?.avatar_url && <AvatarImage src={user.user_metadata.avatar_url} />}
                         <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">{initials}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
-                        {user?.email && <p className="text-xs text-muted-foreground">{user.email}</p>}
+                        <p className="text-sm font-medium">{displayName}</p>
+                        {profile?.role && <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>}
                       </div>
                     </div>
                     <button
@@ -144,13 +148,10 @@ export function Navigation() {
                     </button>
                   </div>
                 ) : (
-                  <button
-                    onClick={login}
-                    className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-                  >
+                  <Link href="/portal" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                     <User className="h-4 w-4" />
                     Log in
-                  </button>
+                  </Link>
                 )}
               </div>
             </nav>

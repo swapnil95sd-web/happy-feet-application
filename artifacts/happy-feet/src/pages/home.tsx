@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import { useListClasses, useCreateEnrollment } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CalendarDays, MapPin, Clock, Loader2, ArrowRight, Sparkles, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  createBooking,
+  type DanceClass,
+  DEFAULT_HOMEPAGE,
+  useHomepageContent,
+  useStudioClasses,
+} from "@/lib/studioflow";
 
 const CATEGORY_FILTERS = ["All", "Kids", "Adults", "Showcase", "Workshop"];
 
@@ -33,9 +39,9 @@ function getClassImage(style: string, category: string) {
 
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState<string>("All");
-  const { data: classes, isLoading } = useListClasses(
-    activeCategory !== "All" ? { category: activeCategory.toLowerCase() } : undefined
-  );
+  const selectedCategory = activeCategory !== "All" ? activeCategory.toLowerCase() : undefined;
+  const { data: classes, isLoading } = useStudioClasses(selectedCategory);
+  const { data: homepage } = useHomepageContent();
   const instructorRef = useRef<HTMLElement>(null);
 
   const scrollToClasses = () =>
@@ -80,22 +86,24 @@ export default function Home() {
 
           <h1 className="font-serif font-bold text-white leading-[1.05] mb-6"
             style={{ fontSize: "clamp(3rem, 8vw, 6.5rem)", textShadow: "0 4px 32px rgba(0,0,0,0.4)" }}>
-            Dance boldly.<br />
-            <span style={{ color: "#f8dde8" }}>Feel at home.</span>
+            {homepage.heroHeadline.split("\n").map((line, index) => (
+              <span key={line}>
+                {line}
+                {index === 0 && <br />}
+              </span>
+            ))}
           </h1>
 
           <p className="mx-auto mb-10 font-medium leading-relaxed text-white/90"
             style={{ fontSize: "clamp(1rem, 2.2vw, 1.35rem)", maxWidth: "600px", textShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
-            Bollywood. BollyHop. Semi-Classical. Hip-Hop.
-            <br className="hidden sm:block" />
-            <span className="text-white/75"> For kids, teens, and adults — in NYC & NJ.</span>
+            {homepage.heroSubheadline}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" onClick={scrollToClasses}
               className="rounded-full font-bold text-base px-10 h-14 shadow-xl transition-all duration-200 hover:scale-105 hover:shadow-2xl border-0"
               style={{ background: "linear-gradient(135deg, #c0185a, #8a0f3f)", color: "#fff" }}>
-              Find Your Class
+              {homepage.ctaText || DEFAULT_HOMEPAGE.ctaText}
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
             <Button size="lg" variant="outline" onClick={scrollToInstructor}
@@ -173,7 +181,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
-              {classes?.map((c) => <ClassCard key={c.id} danceClass={c} />)}
+              {classes.map((c) => <ClassCard key={c.id} danceClass={c} venmoHandle={homepage.venmoHandle} />)}
             </div>
           )}
         </div>
@@ -310,39 +318,45 @@ export default function Home() {
   );
 }
 
-function ClassCard({ danceClass }: { danceClass: any }) {
+function ClassCard({ danceClass, venmoHandle }: { danceClass: DanceClass; venmoHandle: string }) {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
-  const createEnrollment = useCreateEnrollment();
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", email: "", phone: "",
     studentType: danceClass.ageGroup?.toLowerCase().includes("kid") ? "kid" : "adult",
   });
 
-  const handleEnroll = () => {
-    createEnrollment.mutate(
-      { data: { classId: danceClass.id, ...formData } },
-      {
-        onSuccess: () => {
-          setStep(3);
-          toast({ title: "You're registered!", description: "We'll be in touch with next steps." });
-        },
-      }
-    );
+  const handleEnroll = async () => {
+    setIsSaving(true);
+    try {
+      await createBooking({ classId: danceClass.id, className: danceClass.name, ...formData });
+      setStep(3);
+      toast({ title: "You're registered!", description: "We'll be in touch with next steps." });
+    } catch (error) {
+      toast({
+        title: "Could not save booking",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const spotsLeft = danceClass.spotsAvailable;
   const isAlmostFull = spotsLeft <= 5 && spotsLeft > 0;
   const isFull = spotsLeft === 0;
 
-  const cardImage = getClassImage(danceClass.style, danceClass.category);
+  const cardImage = danceClass.imageUrl ?? getClassImage(danceClass.style, danceClass.category);
 
   const venmoNote = encodeURIComponent(
     `${danceClass.name} - ${danceClass.instructor} - $${danceClass.price}`
   );
-  const venmoUrl = `https://venmo.com/ktanvi?txn=pay&amount=${danceClass.price}&note=${venmoNote}`;
+  const normalizedVenmo = venmoHandle.replace(/^@/, "") || DEFAULT_HOMEPAGE.venmoHandle;
+  const venmoUrl = `https://venmo.com/${normalizedVenmo}?txn=pay&amount=${danceClass.price}&note=${venmoNote}`;
 
   return (
     <Card className="flex flex-col overflow-hidden border-0 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
@@ -486,7 +500,7 @@ function ClassCard({ danceClass }: { danceClass: any }) {
                     <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
                       <path d="M19.5 1.5c.8 1.3 1.2 2.6 1.2 4.4 0 5.5-4.7 12.6-8.5 17.6H4.9L1.5 2.4l7-0.7 1.8 14.3c1.7-2.8 3.7-7.1 3.7-10.1 0-1.6-.3-2.8-.8-3.7L19.5 1.5z"/>
                     </svg>
-                    Open Venmo — Pay @ktanvi
+                    Open Venmo - Pay @{normalizedVenmo}
                   </a>
 
                   <p className="text-xs text-center" style={{ color: "#9b8fa0" }}>
@@ -524,10 +538,10 @@ function ClassCard({ danceClass }: { danceClass: any }) {
               {step === 2 && (
                 <div className="flex gap-2 w-full">
                   <Button variant="outline" onClick={() => setStep(1)} className="w-full rounded-full">Back</Button>
-                  <Button onClick={handleEnroll} disabled={createEnrollment.isPending}
+                  <Button onClick={handleEnroll} disabled={isSaving}
                     className="w-full rounded-full font-bold border-0"
                     style={{ background: "linear-gradient(135deg, #c0185a, #8a0f3f)", color: "#fff" }}>
-                    {createEnrollment.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                     Complete Registration
                   </Button>
                 </div>
