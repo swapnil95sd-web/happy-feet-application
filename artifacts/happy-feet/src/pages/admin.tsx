@@ -17,7 +17,7 @@ import {
   saveGalleryImage,
   saveHomepageContent,
   savePracticeVideo,
-  updateBookingPaymentStatus,
+  updateBookingWorkflow,
   uploadStudioImage,
   type Announcement,
   type Booking,
@@ -339,11 +339,42 @@ function ClassManager({ classes, onSaved }: { classes: DanceClass[]; onSaved: ()
 }
 
 function BookingsManager({ bookings, onSaved }: { bookings: Booking[]; onSaved: () => void }) {
+  const [drafts, setDrafts] = useState<Record<string, Pick<Booking, "paymentStatus" | "status" | "notes">>>({});
   const { toast } = useToast();
-  const setStatus = async (booking: Booking, paymentStatus: Booking["paymentStatus"]) => {
+
+  useEffect(() => {
+    setDrafts(
+      Object.fromEntries(
+        bookings.map((booking) => [
+          booking.id,
+          {
+            paymentStatus: booking.paymentStatus,
+            status: booking.status,
+            notes: booking.notes ?? "",
+          },
+        ]),
+      ),
+    );
+  }, [bookings]);
+
+  const setDraft = (booking: Booking, next: Partial<Pick<Booking, "paymentStatus" | "status" | "notes">>) => {
+    setDrafts((current) => ({
+      ...current,
+      [booking.id]: {
+        paymentStatus: current[booking.id]?.paymentStatus ?? booking.paymentStatus,
+        status: current[booking.id]?.status ?? booking.status,
+        notes: current[booking.id]?.notes ?? booking.notes ?? "",
+        ...next,
+      },
+    }));
+  };
+
+  const saveWorkflow = async (booking: Booking) => {
+    const draft = drafts[booking.id];
+    if (!draft) return;
     try {
-      await updateBookingPaymentStatus(booking.id, paymentStatus);
-      toast({ title: "Payment status updated." });
+      await updateBookingWorkflow(booking.id, draft);
+      toast({ title: "Booking updated." });
       onSaved();
     } catch (error) {
       toast({ title: "Could not update booking", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
@@ -357,9 +388,11 @@ function BookingsManager({ bookings, onSaved }: { bookings: Booking[]; onSaved: 
         student_name: b.studentName,
         student_email: b.email,
         student_phone: b.phone,
+        age_group: b.ageGroup,
         class: b.className ?? b.classId,
         booking_status: b.status,
         payment_status: b.paymentStatus,
+        notes: b.notes,
       })),
     );
   };
@@ -375,20 +408,60 @@ function BookingsManager({ bookings, onSaved }: { bookings: Booking[]; onSaved: 
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {bookings.map((b) => (
-          <div key={b.id} className="grid gap-3 rounded-xl border p-3 md:grid-cols-[1fr_180px] md:items-center">
-            <div><p className="font-semibold text-secondary">{b.studentName}</p><p className="text-sm text-muted-foreground">{b.className ?? b.classId} - {b.email} - {b.phone}</p></div>
-            <Select value={b.paymentStatus} onValueChange={(value) => setStatus(b, value as Booking["paymentStatus"])}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">pending</SelectItem>
-                <SelectItem value="received">received</SelectItem>
-                <SelectItem value="waived">waived</SelectItem>
-                <SelectItem value="refunded">refunded</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        ))}
+        {bookings.map((b) => {
+          const draft = drafts[b.id] ?? { paymentStatus: b.paymentStatus, status: b.status, notes: b.notes ?? "" };
+          return (
+            <div key={b.id} className="grid gap-4 rounded-xl border p-4 lg:grid-cols-[1.2fr_1fr]">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-semibold text-secondary">{b.studentName}</p>
+                  <Badge variant={b.status === "confirmed" ? "default" : "outline"}>{b.status}</Badge>
+                  <Badge variant="outline">{b.paymentStatus}</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">{b.className ?? b.classId}</p>
+                <p className="text-sm text-muted-foreground">{b.email} - {b.phone || "no phone"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {b.ageGroup || "age not provided"} - {new Date(b.createdAt).toLocaleString()}
+                </p>
+                {b.notes && <p className="rounded-lg bg-muted px-3 py-2 text-sm text-secondary">{b.notes}</p>}
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Booking status">
+                  <Select value={draft.status} onValueChange={(value) => setDraft(b, { status: value as Booking["status"] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="confirmed">confirmed</SelectItem>
+                      <SelectItem value="waitlist">waitlist</SelectItem>
+                      <SelectItem value="cancelled">cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Payment">
+                  <Select value={draft.paymentStatus} onValueChange={(value) => setDraft(b, { paymentStatus: value as Booking["paymentStatus"] })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">pending</SelectItem>
+                      <SelectItem value="received">received</SelectItem>
+                      <SelectItem value="waived">waived</SelectItem>
+                      <SelectItem value="refunded">refunded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <div className="sm:col-span-2">
+                  <Field label="Admin notes">
+                    <Textarea
+                      value={draft.notes}
+                      onChange={(event) => setDraft(b, { notes: event.target.value })}
+                      placeholder="Call back, payment detail, trial class note"
+                    />
+                  </Field>
+                </div>
+                <Button onClick={() => saveWorkflow(b)} className="sm:col-span-2">Save Booking</Button>
+              </div>
+            </div>
+          );
+        })}
         {!bookings.length && <p className="text-sm text-muted-foreground">No bookings yet.</p>}
       </CardContent>
     </Card>

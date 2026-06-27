@@ -15,10 +15,15 @@ Vercel is configured by `vercel.json` to build the Happy Feet client:
 
 - `VITE_SUPABASE_URL`: Supabase project URL.
 - `VITE_SUPABASE_ANON_KEY`: Supabase anon public key.
+- `VITE_ADMIN_EMAIL`: admin email used as a fallback while Supabase profile roles are being set up.
 
-## Optional Bootstrap Variable
+## Optional Email Notification Variables
 
-- `VITE_ADMIN_EMAIL`: temporary first-admin fallback. Use only until the matching user has `profiles.role = 'admin'`, then prefer the database role.
+Booking emails use the serverless endpoint at `/api/notify-booking`. Bookings still save normally if these are missing.
+
+- `RESEND_API_KEY`: Resend API key for sending email.
+- `ADMIN_NOTIFICATION_EMAIL`: where new booking request emails should go.
+- `NOTIFICATION_FROM_EMAIL`: verified sender, for example `Happy Feet <bookings@yourdomain.com>`. If this is not set, Resend's onboarding sender is used for early testing.
 
 ## Supabase Manual Steps
 

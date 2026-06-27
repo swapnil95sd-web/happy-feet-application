@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { CalendarDays, MapPin, Clock, Loader2, ArrowRight, Sparkles, ChevronDown, CheckCircle2, CreditCard, HeartHandshake, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -383,14 +384,28 @@ function ClassCard({ danceClass, venmoHandle }: { danceClass: DanceClass; venmoH
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", email: "", phone: "",
     studentType: danceClass.ageGroup?.toLowerCase().includes("kid") ? "kid" : "adult",
+    notes: "",
   });
 
   const handleEnroll = async () => {
     setIsSaving(true);
     try {
       await createBooking({ classId: danceClass.id, className: danceClass.name, ...formData });
+      void notifyBooking({
+        classId: danceClass.id,
+        className: danceClass.name,
+        classSchedule: `${danceClass.scheduleDay}s ${danceClass.scheduleTime}`,
+        classLocation: danceClass.location,
+        price: danceClass.price,
+        venmoHandle: normalizedVenmo,
+        studentName: `${formData.firstName} ${formData.lastName}`.trim(),
+        studentEmail: formData.email,
+        studentPhone: formData.phone,
+        ageGroup: formData.studentType,
+        notes: formData.notes,
+      });
       setStep(3);
-      toast({ title: "You're registered!", description: "We'll be in touch with next steps." });
+      toast({ title: "Request received!", description: "Happy Feet will confirm your spot directly." });
     } catch (error) {
       toast({
         title: "Could not save booking",
@@ -529,6 +544,15 @@ function ClassCard({ danceClass, venmoHandle }: { danceClass: DanceClass; venmoH
                     <Input type="tel" className="rounded-xl" value={formData.phone}
                       onChange={e => setFormData({ ...formData, phone: e.target.value })} />
                   </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider">Anything we should know?</Label>
+                    <Textarea
+                      className="min-h-20 rounded-xl"
+                      placeholder="Age, experience level, payment note, or questions"
+                      value={formData.notes}
+                      onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -575,9 +599,9 @@ function ClassCard({ danceClass, venmoHandle }: { danceClass: DanceClass; venmoH
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-serif font-bold" style={{ color: "#3a1f3a" }}>See you on the floor!</h3>
+                  <h3 className="text-xl font-serif font-bold" style={{ color: "#3a1f3a" }}>Request received!</h3>
                   <p className="text-sm" style={{ color: "#6b5b6e" }}>
-                    We'll send class details and confirmation to your email. Can't wait to dance with you.
+                    Happy Feet has your booking request. The studio will confirm your spot, payment, and class details directly.
                   </p>
                 </div>
               )}
@@ -614,4 +638,16 @@ function ClassCard({ danceClass, venmoHandle }: { danceClass: DanceClass; venmoH
       </CardFooter>
     </Card>
   );
+}
+
+async function notifyBooking(payload: Record<string, string | number>) {
+  try {
+    await fetch("/api/notify-booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // Booking persistence is the source of truth; email is a best-effort follow-up.
+  }
 }

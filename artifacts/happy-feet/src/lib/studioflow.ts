@@ -57,8 +57,10 @@ export type Booking = {
   studentName: string;
   email: string;
   phone: string;
+  ageGroup: string;
+  notes: string;
   paymentStatus: "pending" | "received" | "waived" | "refunded";
-  status: string;
+  status: "confirmed" | "cancelled" | "waitlist";
   createdAt: string;
   className?: string | null;
 };
@@ -364,8 +366,10 @@ export function useBookings() {
           studentName: String(row.student_name ?? [row.first_name, row.last_name].filter(Boolean).join(" ")),
           email: String(row.student_email ?? row.email ?? ""),
           phone: String(row.student_phone ?? row.phone ?? ""),
+          ageGroup: String(row.age_group ?? ""),
+          notes: String(row.notes ?? ""),
           paymentStatus: (row.payment_status ?? "pending") as Booking["paymentStatus"],
-          status: String(row.booking_status ?? row.status ?? "confirmed"),
+          status: (row.booking_status ?? row.status ?? "confirmed") as Booking["status"],
           createdAt: String(row.created_at ?? new Date().toISOString()),
           className: (row.classes?.title ?? null) as string | null,
         })),
@@ -520,6 +524,7 @@ export async function createBooking(input: {
   email: string;
   phone: string;
   studentType: string;
+  notes?: string;
 }) {
   if (!supabase) return { demo: true };
   const { error } = await supabase.from("bookings").insert({
@@ -528,6 +533,7 @@ export async function createBooking(input: {
     student_email: input.email,
     student_phone: input.phone,
     age_group: input.studentType,
+    notes: input.notes || null,
     booking_status: "confirmed",
     payment_status: "pending",
   });
@@ -538,6 +544,23 @@ export async function createBooking(input: {
 export async function updateBookingPaymentStatus(id: string, paymentStatus: Booking["paymentStatus"]) {
   if (!supabase) throw new Error("Supabase is not configured.");
   const { error } = await supabase.from("bookings").update({ payment_status: paymentStatus }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateBookingWorkflow(
+  id: string,
+  input: {
+    paymentStatus?: Booking["paymentStatus"];
+    status?: Booking["status"];
+    notes?: string;
+  },
+) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const payload: Record<string, unknown> = {};
+  if (input.paymentStatus) payload.payment_status = input.paymentStatus;
+  if (input.status) payload.booking_status = input.status;
+  if (input.notes !== undefined) payload.notes = input.notes || null;
+  const { error } = await supabase.from("bookings").update(payload).eq("id", id);
   if (error) throw error;
 }
 
