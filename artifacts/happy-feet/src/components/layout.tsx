@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Menu, LogOut, User } from "lucide-react";
+import { LayoutDashboard, Menu, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -23,7 +23,6 @@ export function Navigation() {
 
   const links = [
     { href: "/", label: "Classes" },
-    { href: "/admin", label: "Admin" },
   ];
 
   const displayName = profile?.fullName ?? user?.email ?? "StudioFlow user";
@@ -86,6 +85,12 @@ export function Navigation() {
                     {profile?.role && <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="cursor-pointer">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      Admin dashboard
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     Log out
@@ -138,6 +143,13 @@ export function Navigation() {
                         {profile?.role && <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>}
                       </div>
                     </div>
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      Admin dashboard
+                    </Link>
                     <button
                       onClick={logout}
                       className="flex items-center gap-2 text-sm text-destructive font-medium hover:text-destructive/80 transition-colors"
