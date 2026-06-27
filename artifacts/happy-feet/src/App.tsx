@@ -5,7 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { Navigation } from "@/components/layout";
 import Home from "@/pages/home";
-import Portal from "@/pages/portal";
 import Admin from "@/pages/admin";
 import { AuthProvider, type StudioRole, useAuth } from "@/lib/supabase";
 import { useState } from "react";
@@ -118,7 +117,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/portal">
-        <ProtectedRoute component={Portal} />
+        <Redirect to="/#classes" />
       </Route>
       <Route path="/admin">
         <ProtectedRoute component={Admin} roles={["admin"]} />

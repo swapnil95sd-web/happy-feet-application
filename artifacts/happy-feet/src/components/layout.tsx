@@ -23,7 +23,6 @@ export function Navigation() {
 
   const links = [
     { href: "/", label: "Classes" },
-    { href: "/portal", label: "Student Portal" },
     { href: "/admin", label: "Admin" },
   ];
 
@@ -94,9 +93,9 @@ export function Navigation() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link href="/portal" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/admin" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                 <User className="h-4 w-4" />
-                Log in
+                Admin log in
               </Link>
             )
           )}
@@ -148,9 +147,9 @@ export function Navigation() {
                     </button>
                   </div>
                 ) : (
-                  <Link href="/portal" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                  <Link href="/admin" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                     <User className="h-4 w-4" />
-                    Log in
+                    Admin log in
                   </Link>
                 )}
               </div>

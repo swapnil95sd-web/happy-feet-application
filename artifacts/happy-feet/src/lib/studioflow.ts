@@ -155,20 +155,30 @@ function value(row: Record<string, unknown>, camel: string, snake: string, fallb
 function mapClass(row: Record<string, unknown>): DanceClass {
   const capacity = Number(value(row, "capacity", "capacity", 20));
   const spotsAvailable = Number(value(row, "spotsAvailable", "spots_available", capacity));
+  const style = String(value(row, "style", "style", "Dance"));
+  const ageGroup = String(value(row, "ageGroup", "age_group", ""));
+  const level = String(value(row, "level", "level", ""));
+  const derivedCategory = [ageGroup, level, style].join(" ").toLowerCase().includes("kid")
+    ? "kids"
+    : [ageGroup, level, style].join(" ").toLowerCase().includes("showcase")
+      ? "showcase"
+      : [ageGroup, level, style].join(" ").toLowerCase().includes("workshop")
+        ? "workshop"
+        : "adults";
   return {
     id: String(value(row, "id", "id")),
     name: String(value(row, "name", "title", value(row, "title", "name", "Untitled class"))),
-    style: String(value(row, "style", "style", "Dance")),
+    style,
     description: String(value(row, "description", "description", "")),
     instructor: String(value(row, "instructor", "instructor_name", "Anitha Prakash")),
     location: String(value(row, "location", "location", "")),
     scheduleDay: String(value(row, "scheduleDay", "schedule_day", value(row, "schedule", "schedule", ""))),
     scheduleTime: String(value(row, "scheduleTime", "schedule_time", "")),
     price: Number(value(row, "price", "price", 0)),
-    pricePeriod: String(value(row, "pricePeriod", "price_period", "class")),
+    pricePeriod: String(value(row, "pricePeriod", "price_label", value(row, "price_label", "price_period", "class"))),
     duration: String(value(row, "duration", "duration", "")),
-    ageGroup: String(value(row, "ageGroup", "age_group", "")),
-    category: String(value(row, "category", "category", value(row, "style", "style", "all"))).toLowerCase(),
+    ageGroup,
+    category: String(value(row, "category", "category", derivedCategory)).toLowerCase(),
     capacity,
     spotsAvailable,
     colorScheme: String(value(row, "colorScheme", "color_scheme", "linear-gradient(135deg, #c0185a, #3a1f3a)")),
@@ -179,13 +189,19 @@ function mapClass(row: Record<string, unknown>): DanceClass {
 }
 
 function homepageFromRow(row: Record<string, unknown> | null): HomepageContent {
-  const content = (row?.content && typeof row.content === "object" ? row.content : row) as Record<string, unknown> | null;
+  const content = (
+    row?.value && typeof row.value === "object"
+      ? row.value
+      : row?.content && typeof row.content === "object"
+        ? row.content
+        : row
+  ) as Record<string, unknown> | null;
   if (!content) return DEFAULT_HOMEPAGE;
   return {
     heroHeadline: String(value(content, "heroHeadline", "hero_headline", DEFAULT_HOMEPAGE.heroHeadline)),
     heroSubheadline: String(value(content, "heroSubheadline", "hero_subheadline", DEFAULT_HOMEPAGE.heroSubheadline)),
-    ctaText: String(value(content, "ctaText", "cta_text", DEFAULT_HOMEPAGE.ctaText)),
-    announcementBanner: String(value(content, "announcementBanner", "announcement_banner", DEFAULT_HOMEPAGE.announcementBanner)),
+    ctaText: String(value(content, "ctaText", "ctaPrimary", value(content, "ctaPrimary", "cta_text", DEFAULT_HOMEPAGE.ctaText))),
+    announcementBanner: String(value(content, "announcementBanner", "announcement", value(content, "announcement", "announcement_banner", DEFAULT_HOMEPAGE.announcementBanner))),
     contactEmail: String(value(content, "contactEmail", "contact_email", DEFAULT_HOMEPAGE.contactEmail)),
     contactPhone: String(value(content, "contactPhone", "contact_phone", DEFAULT_HOMEPAGE.contactPhone)),
     venmoHandle: String(value(content, "venmoHandle", "venmo_handle", DEFAULT_HOMEPAGE.venmoHandle)),
@@ -212,11 +228,11 @@ export function useStudioClasses(category?: string) {
         return;
       }
 
-      let query = supabase.from("classes").select("*").order("featured", { ascending: false });
-      if (category && category !== "all") query = query.eq("category", category);
+      const query = supabase.from("classes").select("*").order("featured", { ascending: false });
       const { data: rows, error } = await query;
       if (!cancelled) {
-        setData(error || !rows ? [] : rows.map((row) => mapClass(row as Record<string, unknown>)));
+        const mapped = error || !rows ? [] : rows.map((row) => mapClass(row as Record<string, unknown>));
+        setData(category && category !== "all" ? mapped.filter((c) => c.category === category) : mapped);
         setIsLoading(false);
       }
     }
@@ -280,8 +296,8 @@ export function useAnnouncements() {
         (rows ?? []).map((row) => ({
           id: String(row.id),
           title: String(row.title ?? ""),
-          message: String(row.message ?? row.body ?? ""),
-          status: String(row.status ?? (row.published ? "published" : "draft")),
+          message: String(row.body ?? row.message ?? ""),
+          status: row.published === false ? "draft" : String(row.status ?? "published"),
           publishedAt: (row.published_at ?? row.created_at ?? null) as string | null,
         })),
       );
@@ -312,7 +328,7 @@ export function usePracticeVideos() {
         (rows ?? []).map((row) => ({
           id: String(row.id),
           title: String(row.title ?? ""),
-          url: String(row.url ?? row.video_url ?? ""),
+          url: String(row.video_url ?? row.url ?? ""),
           description: (row.description ?? null) as string | null,
           classId: row.class_id ? String(row.class_id) : null,
           className: (row.classes?.title ?? row.classes?.name ?? null) as string | null,
@@ -346,10 +362,10 @@ export function useBookings() {
           id: String(row.id),
           classId: String(row.class_id),
           studentName: String(row.student_name ?? [row.first_name, row.last_name].filter(Boolean).join(" ")),
-          email: String(row.email ?? ""),
-          phone: String(row.phone ?? ""),
+          email: String(row.student_email ?? row.email ?? ""),
+          phone: String(row.student_phone ?? row.phone ?? ""),
           paymentStatus: (row.payment_status ?? "pending") as Booking["paymentStatus"],
-          status: String(row.status ?? "submitted"),
+          status: String(row.booking_status ?? row.status ?? "confirmed"),
           createdAt: String(row.created_at ?? new Date().toISOString()),
           className: (row.classes?.title ?? row.classes?.name ?? null) as string | null,
         })),
@@ -383,7 +399,7 @@ export function useGalleryImages() {
           title: String(row.title ?? ""),
           imageUrl: String(row.image_url ?? ""),
           altText: (row.alt_text ?? null) as string | null,
-          status: String(row.status ?? "published"),
+          status: row.is_visible === false ? "hidden" : String(row.status ?? "published"),
         })),
       );
       setIsLoading(false);
@@ -410,7 +426,7 @@ export async function saveHomepageContent(content: HomepageContent) {
   if (!supabase) throw new Error("Supabase is not configured.");
   const { error } = await supabase.from("site_content").upsert({
     key: "homepage",
-    content,
+    value: content,
     updated_at: new Date().toISOString(),
   });
   if (error) throw error;
@@ -418,14 +434,16 @@ export async function saveHomepageContent(content: HomepageContent) {
 
 export async function saveClass(input: Partial<DanceClass>) {
   if (!supabase) throw new Error("Supabase is not configured.");
-  const schedule = [input.scheduleDay, input.scheduleTime].filter(Boolean).join(" ");
   const payload: Record<string, unknown> = {
     title: input.name,
     style: input.style,
     description: input.description,
     location: input.location,
-    schedule,
+    schedule_day: input.scheduleDay,
+    schedule_time: input.scheduleTime,
     price: input.price,
+    price_label: input.pricePeriod,
+    duration: input.duration,
     age_group: input.ageGroup,
     level: input.category,
     capacity: input.capacity,
@@ -457,10 +475,8 @@ export async function saveAnnouncement(input: Partial<Announcement>) {
   const { error } = await supabase.from("announcements").upsert({
     id: input.id?.startsWith("demo-") ? undefined : input.id,
     title: input.title,
-    message: input.message,
-    status: input.status,
+    body: input.message,
     published: input.status === "published",
-    published_at: input.status === "published" ? new Date().toISOString() : null,
   });
   if (error) throw error;
 }
@@ -470,7 +486,6 @@ export async function savePracticeVideo(input: Partial<PracticeVideo>) {
   const { error } = await supabase.from("practice_videos").upsert({
     id: input.id,
     title: input.title,
-    url: input.url,
     video_url: input.url,
     description: input.description,
     class_id: input.classId || null,
@@ -490,14 +505,11 @@ export async function createBooking(input: {
   if (!supabase) return { demo: true };
   const { error } = await supabase.from("bookings").insert({
     class_id: input.classId,
-    class_name: input.className,
-    first_name: input.firstName,
-    last_name: input.lastName,
     student_name: `${input.firstName} ${input.lastName}`.trim(),
-    email: input.email,
-    phone: input.phone,
-    student_type: input.studentType,
-    status: "submitted",
+    student_email: input.email,
+    student_phone: input.phone,
+    age_group: input.studentType,
+    booking_status: "confirmed",
     payment_status: "pending",
   });
   if (error) throw error;
@@ -517,7 +529,7 @@ export async function saveGalleryImage(input: Partial<GalleryImage>) {
     title: input.title,
     image_url: input.imageUrl,
     alt_text: input.altText,
-    status: input.status ?? "published",
+    is_visible: input.status !== "hidden",
   });
   if (error) throw error;
 }
