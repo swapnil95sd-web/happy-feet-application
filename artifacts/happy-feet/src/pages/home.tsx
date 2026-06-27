@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CalendarDays, MapPin, Clock, Loader2, ArrowRight, Sparkles, ChevronDown } from "lucide-react";
+import { CalendarDays, MapPin, Clock, Loader2, ArrowRight, Sparkles, ChevronDown, CheckCircle2, CreditCard, HeartHandshake, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   createBooking,
@@ -118,6 +118,25 @@ export default function Home() {
           style={{ background: "linear-gradient(to top, #fffaf6, transparent)" }} />
       </section>
 
+      {homepage.announcementBanner && (
+        <section className="w-full" style={{ background: "#fffaf6" }}>
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(192,24,90,0.1)", color: "#c0185a" }}>
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-sm font-bold" style={{ color: "#3a1f3a" }}>Studio update</p>
+                <p className="text-sm leading-relaxed" style={{ color: "#6b5b6e" }}>{homepage.announcementBanner}</p>
+              </div>
+            </div>
+            <Button onClick={scrollToClasses} variant="outline" className="rounded-full font-semibold">
+              View classes
+            </Button>
+          </div>
+        </section>
+      )}
+
       {/* ── WHY HAPPY FEET ───────────────────────────────────── */}
       <section className="py-20 w-full" style={{ background: "#fffaf6" }}>
         <div className="w-full max-w-6xl mx-auto px-6">
@@ -132,15 +151,41 @@ export default function Home() {
           </div>
           <div className="grid sm:grid-cols-3 gap-8">
             {[
-              { icon: "✦", title: "Taught by Anitha Prakash", body: "15+ years of performing and teaching — Anitha brings warmth, precision, and serious joy to every class." },
-              { icon: "✦", title: "All levels, all ages", body: "Never danced before? Join us. Prepping for a showcase? We have that too. There's a class with your name on it." },
-              { icon: "✦", title: "Small batches. Real results.", body: "Capped enrollment means you actually learn — not just shuffle in the back of an overcrowded room." },
-            ].map((item) => (
-              <div key={item.title} className="rounded-2xl p-8 flex flex-col gap-3"
+              { icon: HeartHandshake, title: "Warm, personal coaching", body: "Anitha brings precision and encouragement to every class, so beginners feel safe and experienced dancers stay challenged." },
+              { icon: CheckCircle2, title: "Clear levels and batches", body: "Pick by age, level, location, and goal. If you are not sure where to start, book a spot and the team will guide you." },
+              { icon: MessageCircle, title: "Real follow-up", body: "After you book, Happy Feet confirms details directly and helps with payment, location, and next steps." },
+            ].map(({ icon: Icon, title, body }) => (
+              <div key={title} className="rounded-2xl p-8 flex flex-col gap-3"
                 style={{ background: "linear-gradient(135deg, rgba(192,24,90,0.05), rgba(58,31,58,0.04))", border: "1px solid rgba(192,24,90,0.1)" }}>
-                <span className="text-xl" style={{ color: "#c98b2f" }}>{item.icon}</span>
-                <h3 className="font-serif font-bold text-lg" style={{ color: "#3a1f3a" }}>{item.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: "#6b5b6e" }}>{item.body}</p>
+                <Icon className="h-6 w-6" style={{ color: "#c98b2f" }} />
+                <h3 className="font-serif font-bold text-lg" style={{ color: "#3a1f3a" }}>{title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: "#6b5b6e" }}>{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 w-full" style={{ background: "#f9f3ef" }}>
+        <div className="mx-auto w-full max-w-6xl px-6">
+          <div className="mb-10 text-center">
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: "#c0185a" }}>How booking works</p>
+            <h2 className="font-serif font-bold" style={{ fontSize: "clamp(1.8rem, 3.6vw, 2.6rem)", color: "#3a1f3a" }}>
+              Simple, human, and confirmed by the studio.
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              { icon: CalendarDays, title: "Choose a class", body: "Browse open batches by age, level, location, and schedule." },
+              { icon: CreditCard, title: "Submit your spot request", body: "Add contact details and use Venmo instructions if payment is due now." },
+              { icon: CheckCircle2, title: "Get confirmation", body: "The studio reviews your request and follows up with final class details." },
+            ].map(({ icon: Icon, title, body }) => (
+              <div key={title} className="rounded-2xl bg-white p-6 shadow-sm" style={{ border: "1px solid rgba(58,31,58,0.08)" }}>
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full" style={{ background: "rgba(192,24,90,0.1)", color: "#c0185a" }}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="font-serif text-lg font-bold" style={{ color: "#3a1f3a" }}>{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: "#6b5b6e" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -180,9 +225,20 @@ export default function Home() {
               <Loader2 className="h-10 w-10 animate-spin" style={{ color: "#c0185a" }} />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
-              {classes.map((c) => <ClassCard key={c.id} danceClass={c} venmoHandle={homepage.venmoHandle} />)}
-            </div>
+            classes.length ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
+                {classes.map((c) => <ClassCard key={c.id} danceClass={c} venmoHandle={homepage.venmoHandle} />)}
+              </div>
+            ) : (
+              <div className="mx-auto max-w-xl rounded-2xl bg-white p-8 text-center shadow-sm" style={{ border: "1px solid rgba(58,31,58,0.08)" }}>
+                <CalendarDays className="mx-auto mb-3 h-9 w-9" style={{ color: "#c0185a" }} />
+                <h3 className="font-serif text-xl font-bold" style={{ color: "#3a1f3a" }}>No classes in this category yet</h3>
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: "#6b5b6e" }}>
+                  Try another filter or check back soon. New batches and workshops are added as the schedule opens.
+                </p>
+                <Button onClick={() => setActiveCategory("All")} className="mt-5 rounded-full">Show all classes</Button>
+              </div>
+            )
           )}
         </div>
       </section>
