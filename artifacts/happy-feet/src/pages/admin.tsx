@@ -380,6 +380,19 @@ function BookingsManager({ bookings, onSaved }: { bookings: Booking[]; onSaved: 
       toast({ title: "Could not update booking", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
     }
   };
+
+  const saveAndEmailStudent = async (booking: Booking) => {
+    const draft = drafts[booking.id];
+    if (!draft) return;
+    try {
+      await updateBookingWorkflow(booking.id, draft);
+      await notifyBookingStatus(booking, draft);
+      toast({ title: "Booking updated and student emailed." });
+      onSaved();
+    } catch (error) {
+      toast({ title: "Could not email student", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    }
+  };
   const exportBookings = () => {
     downloadCsv(
       "bookings.csv",
@@ -457,7 +470,10 @@ function BookingsManager({ bookings, onSaved }: { bookings: Booking[]; onSaved: 
                     />
                   </Field>
                 </div>
-                <Button onClick={() => saveWorkflow(b)} className="sm:col-span-2">Save Booking</Button>
+                <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+                  <Button variant="outline" onClick={() => saveWorkflow(b)}>Save Only</Button>
+                  <Button onClick={() => saveAndEmailStudent(b)}>Save + Email Student</Button>
+                </div>
               </div>
             </div>
           );
@@ -466,6 +482,31 @@ function BookingsManager({ bookings, onSaved }: { bookings: Booking[]; onSaved: 
       </CardContent>
     </Card>
   );
+}
+
+async function notifyBookingStatus(
+  booking: Booking,
+  draft: Pick<Booking, "paymentStatus" | "status" | "notes">,
+) {
+  const response = await fetch("/api/notify-booking", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: "booking-status",
+      classId: booking.classId,
+      className: booking.className ?? booking.classId,
+      studentName: booking.studentName,
+      studentEmail: booking.email,
+      studentPhone: booking.phone,
+      bookingStatus: draft.status,
+      paymentStatus: draft.paymentStatus,
+      notes: draft.notes,
+    }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error || "Email could not be sent.");
+  }
 }
 
 function AnnouncementsManager({ announcements, onSaved }: { announcements: Announcement[]; onSaved: () => void }) {

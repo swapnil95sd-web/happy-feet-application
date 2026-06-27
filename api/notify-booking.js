@@ -52,6 +52,7 @@ module.exports = async function handler(req, res) {
   }
 
   const booking = parseBody(req);
+  const notificationType = booking.type || "new-booking";
   const studentName = escapeHtml(booking.studentName || "New student");
   const studentEmail = String(booking.studentEmail || "");
   const studentPhone = escapeHtml(booking.studentPhone || "Not provided");
@@ -61,6 +62,8 @@ module.exports = async function handler(req, res) {
   const notes = escapeHtml(booking.notes || "No notes");
   const venmoHandle = escapeHtml(booking.venmoHandle || "");
   const price = escapeHtml(booking.price ? `$${booking.price}` : "See class listing");
+  const bookingStatus = escapeHtml(booking.bookingStatus || "confirmed");
+  const paymentStatus = escapeHtml(booking.paymentStatus || "pending");
 
   const adminHtml = `
     <h2>New Happy Feet booking request</h2>
@@ -85,20 +88,33 @@ module.exports = async function handler(req, res) {
     <strong>Payment:</strong> ${price}${venmoHandle ? ` via Venmo @${venmoHandle}` : ""}</p>
   `;
 
+  const statusHtml = `
+    <h2>Your Happy Feet booking was updated</h2>
+    <p>Hi ${studentName},</p>
+    <p>Your booking for <strong>${className}</strong> has been updated.</p>
+    <p><strong>Booking status:</strong> ${bookingStatus}<br />
+    <strong>Payment status:</strong> ${paymentStatus}</p>
+    <p>The studio will follow up directly if anything else is needed.</p>
+  `;
+
   try {
-    await sendEmail(apiKey, {
-      from: fromEmail,
-      to: [adminEmail],
-      subject: `New booking request: ${className}`,
-      html: adminHtml,
-    });
+    if (notificationType === "new-booking") {
+      await sendEmail(apiKey, {
+        from: fromEmail,
+        to: [adminEmail],
+        subject: `New booking request: ${className}`,
+        html: adminHtml,
+      });
+    }
 
     if (studentEmail.includes("@")) {
       await sendEmail(apiKey, {
         from: fromEmail,
         to: [studentEmail],
-        subject: `Happy Feet received your booking request`,
-        html: studentHtml,
+        subject: notificationType === "booking-status"
+          ? `Happy Feet booking update: ${className}`
+          : `Happy Feet received your booking request`,
+        html: notificationType === "booking-status" ? statusHtml : studentHtml,
       });
     }
 

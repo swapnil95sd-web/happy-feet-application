@@ -19,11 +19,13 @@ Vercel is configured by `vercel.json` to build the Happy Feet client:
 
 ## Optional Email Notification Variables
 
-Booking emails use the serverless endpoint at `/api/notify-booking`. Bookings still save normally if these are missing.
+Booking emails use the serverless endpoint at `/api/notify-booking`. Bookings still save normally if these are missing. Admins can also send student status emails from the Bookings tab after updating booking/payment status.
 
 - `RESEND_API_KEY`: Resend API key for sending email.
 - `ADMIN_NOTIFICATION_EMAIL`: where new booking request emails should go.
 - `NOTIFICATION_FROM_EMAIL`: verified sender, for example `Happy Feet <bookings@yourdomain.com>`. If this is not set, Resend's onboarding sender is used for early testing.
+
+For real student emails, verify a sending domain in Resend and use that address for `NOTIFICATION_FROM_EMAIL`.
 
 ## Supabase Manual Steps
 
