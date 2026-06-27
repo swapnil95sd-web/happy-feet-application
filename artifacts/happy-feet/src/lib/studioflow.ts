@@ -432,6 +432,25 @@ export async function saveHomepageContent(content: HomepageContent) {
   if (error) throw error;
 }
 
+export async function uploadStudioImage(bucket: "class-images" | "gallery" | "site-images" | "instructor-images", file: File) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const safeName = file.name
+    .replace(/\.[^.]+$/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48) || "image";
+  const path = `${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}-${safeName}.${extension}`;
+  const { error } = await supabase.storage.from(bucket).upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export async function saveClass(input: Partial<DanceClass>) {
   if (!supabase) throw new Error("Supabase is not configured.");
   const payload: Record<string, unknown> = {

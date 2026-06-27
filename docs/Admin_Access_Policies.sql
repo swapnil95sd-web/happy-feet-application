@@ -112,3 +112,26 @@ create policy "Admins manage gallery images"
 on public.gallery_images for all
 using (public.current_profile_role() = 'admin')
 with check (public.current_profile_role() = 'admin');
+
+-- Supabase Storage policies for local image uploads.
+-- Buckets should already exist: class-images, site-images, gallery, instructor-images.
+drop policy if exists "Public can view studio images" on storage.objects;
+create policy "Public can view studio images"
+on storage.objects for select
+using (bucket_id in ('class-images', 'site-images', 'gallery', 'instructor-images'));
+
+drop policy if exists "Admins can upload studio images" on storage.objects;
+create policy "Admins can upload studio images"
+on storage.objects for insert
+with check (
+  bucket_id in ('class-images', 'site-images', 'gallery', 'instructor-images')
+  and public.current_profile_role() = 'admin'
+);
+
+drop policy if exists "Admins can update studio images" on storage.objects;
+create policy "Admins can update studio images"
+on storage.objects for update
+using (
+  bucket_id in ('class-images', 'site-images', 'gallery', 'instructor-images')
+  and public.current_profile_role() = 'admin'
+);

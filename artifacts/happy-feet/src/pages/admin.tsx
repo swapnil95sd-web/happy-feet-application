@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { BookOpen, CalendarDays, Image, LayoutDashboard, Megaphone, Plus, Settings, Video } from "lucide-react";
+import { BookOpen, CalendarDays, Download, Image, LayoutDashboard, Megaphone, Plus, Settings, Upload, Video } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import {
   saveHomepageContent,
   savePracticeVideo,
   updateBookingPaymentStatus,
+  uploadStudioImage,
   type Announcement,
   type Booking,
   type DanceClass,
@@ -168,6 +169,7 @@ function Overview({ stats, bookings, classes }: { stats: ReturnType<typeof useAd
 
 function HomepageEditor({ initial, onSaved }: { initial: HomepageContent; onSaved: () => void }) {
   const [form, setForm] = useState(initial);
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   useEffect(() => setForm(initial), [initial]);
 
@@ -178,6 +180,20 @@ function HomepageEditor({ initial, onSaved }: { initial: HomepageContent; onSave
       onSaved();
     } catch (error) {
       toast({ title: "Could not save homepage", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    }
+  };
+
+  const uploadHeroImage = async (file: File | null) => {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const imageUrl = await uploadStudioImage("site-images", file);
+      setForm({ ...form, heroImageUrl: imageUrl });
+      toast({ title: "Hero image uploaded." });
+    } catch (error) {
+      toast({ title: "Could not upload image", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -192,7 +208,16 @@ function HomepageEditor({ initial, onSaved }: { initial: HomepageContent; onSave
         <Field label="Contact email"><Input value={form.contactEmail} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} /></Field>
         <Field label="Contact phone"><Input value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} /></Field>
         <Field label="Venmo handle"><Input value={form.venmoHandle} onChange={(e) => setForm({ ...form, venmoHandle: e.target.value })} /></Field>
-        <Field label="Hero image URL"><Input value={form.heroImageUrl || DEFAULT_HOMEPAGE.heroImageUrl} onChange={(e) => setForm({ ...form, heroImageUrl: e.target.value })} /></Field>
+        <Field label="Hero image">
+          <div className="space-y-2">
+            <Input value={form.heroImageUrl || DEFAULT_HOMEPAGE.heroImageUrl} onChange={(e) => setForm({ ...form, heroImageUrl: e.target.value })} />
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold text-secondary transition-colors hover:bg-muted">
+              <Upload className="h-4 w-4" />
+              {isUploading ? "Uploading..." : "Upload from computer"}
+              <input type="file" accept="image/*" className="sr-only" onChange={(e) => uploadHeroImage(e.target.files?.[0] ?? null)} />
+            </label>
+          </div>
+        </Field>
         <div className="sm:col-span-2"><Button onClick={save}>Save Homepage</Button></div>
       </CardContent>
     </Card>
@@ -201,6 +226,7 @@ function HomepageEditor({ initial, onSaved }: { initial: HomepageContent; onSave
 
 function ClassManager({ classes, onSaved }: { classes: DanceClass[]; onSaved: () => void }) {
   const [form, setForm] = useState<Partial<DanceClass>>(EMPTY_CLASS);
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const edit = (danceClass: DanceClass) => setForm(danceClass);
   const save = async () => {
@@ -222,6 +248,39 @@ function ClassManager({ classes, onSaved }: { classes: DanceClass[]; onSaved: ()
       toast({ title: "Could not deactivate class", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
     }
   };
+  const uploadClassImage = async (file: File | null) => {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const imageUrl = await uploadStudioImage("class-images", file);
+      setForm({ ...form, imageUrl });
+      toast({ title: "Class image uploaded." });
+    } catch (error) {
+      toast({ title: "Could not upload image", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  const exportClasses = () => {
+    downloadCsv(
+      "classes.csv",
+      classes.map((c) => ({
+        title: c.name,
+        style: c.style,
+        location: c.location,
+        schedule_day: c.scheduleDay,
+        schedule_time: c.scheduleTime,
+        price: c.price,
+        price_label: c.pricePeriod,
+        age_group: c.ageGroup,
+        level: c.category,
+        capacity: c.capacity,
+        status: c.status,
+        featured: c.featured ? "yes" : "no",
+        image_url: c.imageUrl ?? "",
+      })),
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -238,7 +297,16 @@ function ClassManager({ classes, onSaved }: { classes: DanceClass[]; onSaved: ()
           <Field label="Level/category"><Input value={form.category ?? ""} onChange={(e) => setForm({ ...form, category: e.target.value.toLowerCase() })} /></Field>
           <Field label="Capacity"><Input type="number" value={form.capacity ?? 0} onChange={(e) => setForm({ ...form, capacity: Number(e.target.value) })} /></Field>
           <Field label="Status"><Input value={form.status ?? "active"} onChange={(e) => setForm({ ...form, status: e.target.value })} /></Field>
-          <Field label="Image URL"><Input value={form.imageUrl ?? ""} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} /></Field>
+          <Field label="Class image">
+            <div className="space-y-2">
+              <Input value={form.imageUrl ?? ""} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold text-secondary transition-colors hover:bg-muted">
+                <Upload className="h-4 w-4" />
+                {isUploading ? "Uploading..." : "Upload from computer"}
+                <input type="file" accept="image/*" className="sr-only" onChange={(e) => uploadClassImage(e.target.files?.[0] ?? null)} />
+              </label>
+            </div>
+          </Field>
           <Field label="Description"><Textarea value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
           <div className="flex gap-2 sm:col-span-2">
             <Button onClick={save}>Save Class</Button>
@@ -247,7 +315,15 @@ function ClassManager({ classes, onSaved }: { classes: DanceClass[]; onSaved: ()
         </CardContent>
       </Card>
       <Card>
-        <CardHeader><CardTitle className="text-base text-secondary">Current Classes</CardTitle></CardHeader>
+        <CardHeader>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle className="text-base text-secondary">Current Classes</CardTitle>
+            <Button variant="outline" onClick={exportClasses} disabled={!classes.length} className="gap-2">
+              <Download className="h-4 w-4" />
+              Download CSV
+            </Button>
+          </div>
+        </CardHeader>
         <CardContent className="space-y-3">
           {classes.map((c) => (
             <div key={c.id} className="flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -273,9 +349,31 @@ function BookingsManager({ bookings, onSaved }: { bookings: Booking[]; onSaved: 
       toast({ title: "Could not update booking", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
     }
   };
+  const exportBookings = () => {
+    downloadCsv(
+      "bookings.csv",
+      bookings.map((b) => ({
+        created_at: b.createdAt,
+        student_name: b.studentName,
+        student_email: b.email,
+        student_phone: b.phone,
+        class: b.className ?? b.classId,
+        booking_status: b.status,
+        payment_status: b.paymentStatus,
+      })),
+    );
+  };
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base text-secondary">Bookings and Payments</CardTitle></CardHeader>
+      <CardHeader>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="text-base text-secondary">Bookings and Payments</CardTitle>
+          <Button variant="outline" onClick={exportBookings} disabled={!bookings.length} className="gap-2">
+            <Download className="h-4 w-4" />
+            Download CSV
+          </Button>
+        </div>
+      </CardHeader>
       <CardContent className="space-y-3">
         {bookings.map((b) => (
           <div key={b.id} className="grid gap-3 rounded-xl border p-3 md:grid-cols-[1fr_180px] md:items-center">
@@ -343,6 +441,7 @@ function VideosManager({ videos, classes, onSaved }: { videos: PracticeVideo[]; 
 
 function GalleryManager({ images, onSaved }: { images: GalleryImage[]; onSaved: () => void }) {
   const [form, setForm] = useState<Partial<GalleryImage>>({ title: "", imageUrl: "", altText: "", status: "published" });
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const save = async () => {
     try {
@@ -354,7 +453,52 @@ function GalleryManager({ images, onSaved }: { images: GalleryImage[]; onSaved: 
       toast({ title: "Could not save image", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
     }
   };
-  return <SimpleEditor title="Gallery Images" items={images} form={form} setForm={setForm} onSave={save} itemBody={(image) => image.imageUrl} />;
+  const uploadGalleryImage = async (file: File | null) => {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const imageUrl = await uploadStudioImage("gallery", file);
+      setForm({ ...form, imageUrl });
+      toast({ title: "Gallery image uploaded." });
+    } catch (error) {
+      toast({ title: "Could not upload image", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base text-secondary">Gallery Images</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        <Field label="Title"><Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
+        <Field label="Image">
+          <div className="space-y-2">
+            <Input value={form.imageUrl ?? ""} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold text-secondary transition-colors hover:bg-muted">
+              <Upload className="h-4 w-4" />
+              {isUploading ? "Uploading..." : "Upload from computer"}
+              <input type="file" accept="image/*" className="sr-only" onChange={(e) => uploadGalleryImage(e.target.files?.[0] ?? null)} />
+            </label>
+          </div>
+        </Field>
+        <Field label="Alt text"><Input value={form.altText ?? ""} onChange={(e) => setForm({ ...form, altText: e.target.value })} /></Field>
+        <Field label="Status"><Input value={form.status ?? "published"} onChange={(e) => setForm({ ...form, status: e.target.value })} /></Field>
+        <Button onClick={save}>Save Image</Button>
+        <div className="space-y-3">
+          {images.map((image) => (
+            <div key={image.id} className="grid gap-3 rounded-xl border p-3 sm:grid-cols-[96px_1fr]">
+              {image.imageUrl ? <img src={image.imageUrl} alt={image.altText ?? image.title} className="h-20 w-24 rounded-md object-cover" /> : <div className="h-20 w-24 rounded-md bg-muted" />}
+              <div>
+                <p className="font-semibold text-secondary">{image.title || "Untitled image"}</p>
+                <p className="break-all text-sm text-muted-foreground">{image.imageUrl}</p>
+              </div>
+            </div>
+          ))}
+          {!images.length && <p className="text-sm text-muted-foreground">Nothing here yet.</p>}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 function SimpleEditor<T extends { id: string; title: string }>({
@@ -404,4 +548,26 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
       {children}
     </div>
   );
+}
+
+function downloadCsv(filename: string, rows: Record<string, string | number | boolean | null | undefined>[]) {
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const escapeCell = (value: string | number | boolean | null | undefined) => {
+    const text = String(value ?? "");
+    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  };
+  const csv = [
+    headers.join(","),
+    ...rows.map((row) => headers.map((header) => escapeCell(row[header])).join(",")),
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
