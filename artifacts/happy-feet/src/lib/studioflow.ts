@@ -323,7 +323,7 @@ export function usePracticeVideos() {
         setIsLoading(false);
         return;
       }
-      const { data: rows } = await supabase.from("practice_videos").select("*, classes(title,name)");
+      const { data: rows } = await supabase.from("practice_videos").select("*, classes(title)");
       setData(
         (rows ?? []).map((row) => ({
           id: String(row.id),
@@ -331,7 +331,7 @@ export function usePracticeVideos() {
           url: String(row.video_url ?? row.url ?? ""),
           description: (row.description ?? null) as string | null,
           classId: row.class_id ? String(row.class_id) : null,
-          className: (row.classes?.title ?? row.classes?.name ?? null) as string | null,
+          className: (row.classes?.title ?? null) as string | null,
         })),
       );
       setIsLoading(false);
@@ -356,7 +356,7 @@ export function useBookings() {
         setIsLoading(false);
         return;
       }
-      const { data: rows } = await supabase.from("bookings").select("*, classes(title,name)").order("created_at", { ascending: false });
+      const { data: rows } = await supabase.from("bookings").select("*, classes(title)").order("created_at", { ascending: false });
       setData(
         (rows ?? []).map((row) => ({
           id: String(row.id),
@@ -367,7 +367,7 @@ export function useBookings() {
           paymentStatus: (row.payment_status ?? "pending") as Booking["paymentStatus"],
           status: String(row.booking_status ?? row.status ?? "confirmed"),
           createdAt: String(row.created_at ?? new Date().toISOString()),
-          className: (row.classes?.title ?? row.classes?.name ?? null) as string | null,
+          className: (row.classes?.title ?? null) as string | null,
         })),
       );
       setIsLoading(false);

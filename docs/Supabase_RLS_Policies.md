@@ -112,7 +112,7 @@ using (
     select 1
     from public.profiles
     where profiles.id = auth.uid()
-      and lower(profiles.email) = lower(bookings.email)
+      and lower(profiles.email) = lower(bookings.student_email)
   )
 );
 ```
