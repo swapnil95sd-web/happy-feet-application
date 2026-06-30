@@ -427,13 +427,7 @@ export function useAdminStats(classes: DanceClass[], bookings: Booking[], announ
 }
 
 export async function saveHomepageContent(content: HomepageContent) {
-  if (!supabase) throw new Error("Supabase is not configured.");
-  const { error } = await supabase.from("site_content").upsert({
-    key: "homepage",
-    value: content,
-    updated_at: new Date().toISOString(),
-  });
-  if (error) throw error;
+  await adminWrite("saveHomepage", content);
 }
 
 export async function uploadStudioImage(bucket: "class-images" | "gallery" | "site-images" | "instructor-images", file: File) {
@@ -456,84 +450,24 @@ export async function uploadStudioImage(bucket: "class-images" | "gallery" | "si
 }
 
 export async function saveClass(input: Partial<DanceClass>) {
-  if (!supabase) throw new Error("Supabase is not configured.");
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (!token) throw new Error("Please log in again before saving classes.");
-
-  const response = await fetch("/api/admin-class", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(input),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    let message = text;
-    try {
-      const body = JSON.parse(text);
-      message = body?.error || body?.message || text;
-    } catch {
-      message = text.slice(0, 240);
-    }
-    throw new Error(message || `Admin class API failed with ${response.status}.`);
-  }
+  await adminWrite("saveClass", input);
 }
 
 export async function runClassSaveDiagnostic() {
-  if (!supabase) throw new Error("Supabase is not configured.");
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (!token) throw new Error("Please log in again before running diagnostics.");
-  const response = await fetch("/api/admin-class", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ action: "diagnostic" }),
-  });
-  const text = await response.text();
-  let body: { ok?: boolean; checks?: Array<{ name: string; ok: boolean; detail?: string }>; error?: string } | null = null;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    throw new Error(`Admin API returned ${response.status}: ${text.slice(0, 240)}`);
-  }
-  if (!response.ok || !body?.ok) throw new Error(body?.error || `Admin API returned ${response.status}.`);
+  const body = await adminWrite<{ checks?: Array<{ name: string; ok: boolean; detail?: string }> }>("diagnostic", {});
   return body.checks ?? [];
 }
 
 export async function deactivateClass(id: string) {
-  if (!supabase) throw new Error("Supabase is not configured.");
-  const { error } = await supabase.from("classes").update({ status: "inactive" }).eq("id", id);
-  if (error) throw error;
+  await adminWrite("deactivateClass", { id });
 }
 
 export async function saveAnnouncement(input: Partial<Announcement>) {
-  if (!supabase) throw new Error("Supabase is not configured.");
-  const { error } = await supabase.from("announcements").upsert({
-    id: input.id?.startsWith("demo-") ? undefined : input.id,
-    title: input.title,
-    body: input.message,
-    published: input.status === "published",
-  });
-  if (error) throw error;
+  await adminWrite("saveAnnouncement", input);
 }
 
 export async function savePracticeVideo(input: Partial<PracticeVideo>) {
-  if (!supabase) throw new Error("Supabase is not configured.");
-  const { error } = await supabase.from("practice_videos").upsert({
-    id: input.id,
-    title: input.title,
-    video_url: input.url,
-    description: input.description,
-    class_id: input.classId || null,
-  });
-  if (error) throw error;
+  await adminWrite("savePracticeVideo", input);
 }
 
 export async function createBooking(input: {
@@ -575,23 +509,33 @@ export async function updateBookingWorkflow(
     notes?: string;
   },
 ) {
-  if (!supabase) throw new Error("Supabase is not configured.");
-  const payload: Record<string, unknown> = {};
-  if (input.paymentStatus) payload.payment_status = input.paymentStatus;
-  if (input.status) payload.booking_status = input.status;
-  if (input.notes !== undefined) payload.notes = input.notes || null;
-  const { error } = await supabase.from("bookings").update(payload).eq("id", id);
-  if (error) throw error;
+  await adminWrite("updateBooking", { id, ...input });
 }
 
 export async function saveGalleryImage(input: Partial<GalleryImage>) {
+  await adminWrite("saveGalleryImage", input);
+}
+
+async function adminWrite<T extends Record<string, unknown> = Record<string, unknown>>(action: string, payload: unknown): Promise<T> {
   if (!supabase) throw new Error("Supabase is not configured.");
-  const { error } = await supabase.from("gallery_images").upsert({
-    id: input.id,
-    title: input.title,
-    image_url: input.imageUrl,
-    alt_text: input.altText,
-    is_visible: input.status !== "hidden",
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Please log in again before saving.");
+  const response = await fetch("/api/admin-write", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ action, payload }),
   });
-  if (error) throw error;
+  const text = await response.text();
+  let body: T & { ok?: boolean; error?: string };
+  try {
+    body = JSON.parse(text);
+  } catch {
+    throw new Error(`Admin API returned ${response.status}: ${text.slice(0, 240)}`);
+  }
+  if (!response.ok || body.ok === false) throw new Error(body.error || `Admin API returned ${response.status}.`);
+  return body;
 }
