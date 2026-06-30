@@ -471,9 +471,40 @@ export async function saveClass(input: Partial<DanceClass>) {
   });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new Error(body?.error || "Could not save class.");
+    const text = await response.text();
+    let message = text;
+    try {
+      const body = JSON.parse(text);
+      message = body?.error || body?.message || text;
+    } catch {
+      message = text.slice(0, 240);
+    }
+    throw new Error(message || `Admin class API failed with ${response.status}.`);
   }
+}
+
+export async function runClassSaveDiagnostic() {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Please log in again before running diagnostics.");
+  const response = await fetch("/api/admin-class", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ action: "diagnostic" }),
+  });
+  const text = await response.text();
+  let body: { ok?: boolean; checks?: Array<{ name: string; ok: boolean; detail?: string }>; error?: string } | null = null;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    throw new Error(`Admin API returned ${response.status}: ${text.slice(0, 240)}`);
+  }
+  if (!response.ok || !body?.ok) throw new Error(body?.error || `Admin API returned ${response.status}.`);
+  return body.checks ?? [];
 }
 
 export async function deactivateClass(id: string) {

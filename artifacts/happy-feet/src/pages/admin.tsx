@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   DEFAULT_HOMEPAGE,
   deactivateClass,
+  runClassSaveDiagnostic,
   saveAnnouncement,
   saveClass,
   saveGalleryImage,
@@ -227,6 +228,7 @@ function HomepageEditor({ initial, onSaved }: { initial: HomepageContent; onSave
 function ClassManager({ classes, onSaved }: { classes: DanceClass[]; onSaved: () => void }) {
   const [form, setForm] = useState<Partial<DanceClass>>(EMPTY_CLASS);
   const [isUploading, setIsUploading] = useState(false);
+  const [diagnostic, setDiagnostic] = useState<string>("");
   const { toast } = useToast();
   const edit = (danceClass: DanceClass) => setForm(danceClass);
   const save = async () => {
@@ -259,6 +261,19 @@ function ClassManager({ classes, onSaved }: { classes: DanceClass[]; onSaved: ()
       toast({ title: "Could not upload image", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
     } finally {
       setIsUploading(false);
+    }
+  };
+  const runDiagnostic = async () => {
+    setDiagnostic("Running class save diagnostic...");
+    try {
+      const checks = await runClassSaveDiagnostic();
+      const summary = checks.map((check) => `${check.ok ? "OK" : "FAIL"} ${check.name}${check.detail ? `: ${check.detail}` : ""}`).join("\n");
+      setDiagnostic(summary || "Diagnostic passed.");
+      toast({ title: "Class save diagnostic passed." });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Diagnostic failed.";
+      setDiagnostic(message);
+      toast({ title: "Class save diagnostic failed", description: message, variant: "destructive" });
     }
   };
   const exportClasses = () => {
@@ -320,7 +335,13 @@ function ClassManager({ classes, onSaved }: { classes: DanceClass[]; onSaved: ()
           <div className="flex gap-2 sm:col-span-2">
             <Button onClick={save}>Save Class</Button>
             <Button variant="outline" onClick={() => setForm(EMPTY_CLASS)}>Clear</Button>
+            <Button variant="outline" onClick={runDiagnostic}>Run Save Diagnostic</Button>
           </div>
+          {diagnostic && (
+            <pre className="whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs text-muted-foreground sm:col-span-2">
+              {diagnostic}
+            </pre>
+          )}
         </CardContent>
       </Card>
       <Card>

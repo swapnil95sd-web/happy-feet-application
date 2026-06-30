@@ -42,11 +42,21 @@ function normalizeClass(input) {
   };
 }
 
+function getSupabaseUrl() {
+  return process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+}
+
+function getSupabaseAnonKey() {
+  return process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+}
+
 async function supabaseFetch(path, options = {}) {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseUrl = getSupabaseUrl();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Server admin save is not configured. Add SUPABASE_SERVICE_ROLE_KEY in Vercel.");
+    throw new Error(
+      `Server admin save is not configured. Missing ${!supabaseUrl ? "SUPABASE_URL/VITE_SUPABASE_URL" : "SUPABASE_SERVICE_ROLE_KEY"} in Vercel.`,
+    );
   }
 
   const response = await fetch(`${supabaseUrl}${path}`, {
@@ -74,8 +84,8 @@ async function supabaseFetch(path, options = {}) {
 }
 
 async function getUserFromToken(token) {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseUrl = getSupabaseUrl();
+  const anonKey = getSupabaseAnonKey();
   if (!supabaseUrl || !anonKey) throw new Error("Supabase public env vars are missing.");
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: {
@@ -89,16 +99,54 @@ async function getUserFromToken(token) {
 
 async function assertAdmin(user) {
   const rows = await supabaseFetch(
-    `/rest/v1/profiles?select=id,email,role&id=eq.${encodeURIComponent(user.id)}`,
+    `/rest/v1/profiles?select=id,email,role&or=(id.eq.${encodeURIComponent(user.id)},email.eq.${encodeURIComponent(user.email || "")})`,
     { method: "GET", headers: { Prefer: "return=representation" } },
   );
-  const profile = Array.isArray(rows) ? rows[0] : null;
+  const profile = Array.isArray(rows)
+    ? rows.find((row) => row.id === user.id) || rows.find((row) => row.email?.toLowerCase?.() === user.email?.toLowerCase?.()) || null
+    : null;
   const bootstrapEmail = process.env.VITE_ADMIN_EMAIL;
   const isBootstrapAdmin =
     bootstrapEmail && user.email && bootstrapEmail.toLowerCase() === user.email.toLowerCase();
   if (profile?.role !== "admin" && !isBootstrapAdmin) {
     throw new Error("This login is not marked as admin in Supabase profiles.");
   }
+  return profile || { id: user.id, email: user.email, role: "admin" };
+}
+
+async function runDiagnostic(token) {
+  const checks = [];
+  checks.push({ name: "api_route", ok: true });
+  checks.push({ name: "supabase_url", ok: Boolean(getSupabaseUrl()) });
+  checks.push({ name: "supabase_anon_key", ok: Boolean(getSupabaseAnonKey()) });
+  checks.push({ name: "service_role_key", ok: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) });
+
+  const user = await getUserFromToken(token);
+  checks.push({ name: "session", ok: true, detail: user.email || user.id });
+  const profile = await assertAdmin(user);
+  checks.push({ name: "admin_profile", ok: true, detail: profile.email || profile.id });
+
+  const testTitle = `Diagnostic Class ${Date.now()}`;
+  await supabaseFetch("/rest/v1/classes", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      title: testTitle,
+      style: "Diagnostic",
+      description: "Temporary diagnostic row. Safe to delete.",
+      status: "draft",
+      price: 0,
+      capacity: 1,
+      featured: false,
+    }),
+  });
+  checks.push({ name: "insert_class", ok: true });
+
+  await supabaseFetch(`/rest/v1/classes?title=eq.${encodeURIComponent(testTitle)}`, {
+    method: "DELETE",
+  });
+  checks.push({ name: "delete_diagnostic_class", ok: true });
+  return checks;
 }
 
 module.exports = async function handler(req, res) {
@@ -110,10 +158,15 @@ module.exports = async function handler(req, res) {
   try {
     const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
     if (!token) throw new Error("Missing admin session. Please log in again.");
+    const body = parseBody(req);
+    if (body.action === "diagnostic") {
+      const checks = await runDiagnostic(token);
+      return res.status(200).json({ ok: true, checks });
+    }
+
     const user = await getUserFromToken(token);
     await assertAdmin(user);
 
-    const body = parseBody(req);
     const { id, payload } = normalizeClass(body);
     if (id) {
       await supabaseFetch(`/rest/v1/classes?id=eq.${encodeURIComponent(id)}`, {
