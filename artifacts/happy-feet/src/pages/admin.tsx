@@ -197,6 +197,19 @@ function HomepageEditor({ initial, onSaved }: { initial: HomepageContent; onSave
       setIsUploading(false);
     }
   };
+  const uploadInstructorImage = async (file: File | null) => {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const imageUrl = await uploadStudioImage("instructor-images", file);
+      setForm({ ...form, instructorImageUrl: imageUrl });
+      toast({ title: "Instructor image uploaded." });
+    } catch (error) {
+      toast({ title: "Could not upload image", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <Card>
@@ -211,12 +224,28 @@ function HomepageEditor({ initial, onSaved }: { initial: HomepageContent; onSave
         <Field label="Venmo handle"><Input value={form.venmoHandle} onChange={(e) => setForm({ ...form, venmoHandle: e.target.value })} /></Field>
         <Field label="Hero image">
           <div className="space-y-2">
-            <Input value={form.heroImageUrl || DEFAULT_HOMEPAGE.heroImageUrl} onChange={(e) => setForm({ ...form, heroImageUrl: e.target.value })} />
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold text-secondary transition-colors hover:bg-muted">
+            {(form.heroImageUrl || DEFAULT_HOMEPAGE.heroImageUrl) && (
+              <img src={form.heroImageUrl || DEFAULT_HOMEPAGE.heroImageUrl} alt="Homepage hero preview" className="h-28 w-full rounded-xl object-cover" />
+            )}
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-secondary/90">
               <Upload className="h-4 w-4" />
-              {isUploading ? "Uploading..." : "Upload from computer"}
+              {isUploading ? "Uploading..." : "Upload hero image"}
               <input type="file" accept="image/*" className="sr-only" onChange={(e) => uploadHeroImage(e.target.files?.[0] ?? null)} />
             </label>
+            <Input value={form.heroImageUrl || ""} placeholder="Optional image URL" onChange={(e) => setForm({ ...form, heroImageUrl: e.target.value })} />
+          </div>
+        </Field>
+        <Field label="Instructor image">
+          <div className="space-y-2">
+            {(form.instructorImageUrl || DEFAULT_HOMEPAGE.instructorImageUrl) && (
+              <img src={form.instructorImageUrl || DEFAULT_HOMEPAGE.instructorImageUrl} alt="Instructor preview" className="h-28 w-full rounded-xl object-cover" />
+            )}
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-secondary/90">
+              <Upload className="h-4 w-4" />
+              {isUploading ? "Uploading..." : "Upload instructor image"}
+              <input type="file" accept="image/*" className="sr-only" onChange={(e) => uploadInstructorImage(e.target.files?.[0] ?? null)} />
+            </label>
+            <Input value={form.instructorImageUrl || ""} placeholder="Optional image URL" onChange={(e) => setForm({ ...form, instructorImageUrl: e.target.value })} />
           </div>
         </Field>
         <div className="sm:col-span-2"><Button onClick={save}>Save Homepage</Button></div>
@@ -323,12 +352,13 @@ function ClassManager({ classes, onSaved }: { classes: DanceClass[]; onSaved: ()
           </Field>
           <Field label="Class image">
             <div className="space-y-2">
-              <Input value={form.imageUrl ?? ""} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold text-secondary transition-colors hover:bg-muted">
+              {form.imageUrl && <img src={form.imageUrl} alt="Class preview" className="h-28 w-full rounded-xl object-cover" />}
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-secondary/90">
                 <Upload className="h-4 w-4" />
-                {isUploading ? "Uploading..." : "Upload from computer"}
+                {isUploading ? "Uploading..." : "Upload class image"}
                 <input type="file" accept="image/*" className="sr-only" onChange={(e) => uploadClassImage(e.target.files?.[0] ?? null)} />
               </label>
+              <Input value={form.imageUrl ?? ""} placeholder="Optional image URL" onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
             </div>
           </Field>
           <Field label="Description"><Textarea value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
@@ -590,7 +620,7 @@ function GalleryManager({ images, onSaved }: { images: GalleryImage[]; onSaved: 
   const save = async () => {
     try {
       await saveGalleryImage(form);
-      toast({ title: "Image URL saved." });
+      toast({ title: "Gallery image saved." });
       setForm({ title: "", imageUrl: "", altText: "", status: "published" });
       onSaved();
     } catch (error) {
@@ -617,16 +647,25 @@ function GalleryManager({ images, onSaved }: { images: GalleryImage[]; onSaved: 
         <Field label="Title"><Input value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
         <Field label="Image">
           <div className="space-y-2">
-            <Input value={form.imageUrl ?? ""} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold text-secondary transition-colors hover:bg-muted">
+            {form.imageUrl && <img src={form.imageUrl} alt="Gallery preview" className="h-32 w-full rounded-xl object-cover" />}
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-secondary/90">
               <Upload className="h-4 w-4" />
-              {isUploading ? "Uploading..." : "Upload from computer"}
+              {isUploading ? "Uploading..." : "Upload gallery image"}
               <input type="file" accept="image/*" className="sr-only" onChange={(e) => uploadGalleryImage(e.target.files?.[0] ?? null)} />
             </label>
+            <Input value={form.imageUrl ?? ""} placeholder="Optional image URL" onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
           </div>
         </Field>
         <Field label="Alt text"><Input value={form.altText ?? ""} onChange={(e) => setForm({ ...form, altText: e.target.value })} /></Field>
-        <Field label="Status"><Input value={form.status ?? "published"} onChange={(e) => setForm({ ...form, status: e.target.value })} /></Field>
+        <Field label="Status">
+          <Select value={form.status ?? "published"} onValueChange={(value) => setForm({ ...form, status: value })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="published">published</SelectItem>
+              <SelectItem value="hidden">hidden</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
         <Button onClick={save}>Save Image</Button>
         <div className="space-y-3">
           {images.map((image) => (

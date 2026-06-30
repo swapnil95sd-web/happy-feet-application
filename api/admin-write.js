@@ -1,3 +1,5 @@
+const { randomUUID } = require("crypto");
+
 function parseBody(req) {
   if (!req.body) return {};
   if (typeof req.body === "string") {
@@ -87,6 +89,60 @@ function clean(payload) {
   );
 }
 
+function safeFileName(name) {
+  const fallback = "image";
+  const parts = String(name || fallback).split(".");
+  const extension = (parts.length > 1 ? parts.pop() : "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const base = parts.join(".")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48) || fallback;
+  return `${base}.${extension}`;
+}
+
+async function uploadImage(payload) {
+  const bucket = String(payload.bucket || "");
+  if (!["class-images", "site-images", "gallery", "instructor-images"].includes(bucket)) {
+    throw new Error("Unsupported image bucket.");
+  }
+  const dataUrl = String(payload.dataUrl || "");
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) throw new Error("Image upload payload was invalid.");
+  const contentType = payload.contentType || match[1] || "image/jpeg";
+  const buffer = Buffer.from(match[2], "base64");
+  if (!buffer.length) throw new Error("Image file was empty.");
+  if (buffer.length > 8 * 1024 * 1024) throw new Error("Image is too large. Please upload an image under 8 MB.");
+
+  const path = `${new Date().toISOString().slice(0, 10)}/${randomUUID()}-${safeFileName(payload.fileName)}`;
+  const supabaseUrl = getSupabaseUrl();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) throw new Error("Image uploads are not configured in Vercel.");
+
+  const response = await fetch(`${supabaseUrl}/storage/v1/object/${bucket}/${path}`, {
+    method: "POST",
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      "Content-Type": contentType,
+      "x-upsert": "false",
+    },
+    body: buffer,
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    let message = text;
+    try {
+      const parsed = JSON.parse(text);
+      message = parsed.message || parsed.error || text;
+    } catch {
+      // Keep raw text.
+    }
+    throw new Error(message || "Image upload failed.");
+  }
+  return { imageUrl: `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}` };
+}
+
 function classPayload(input) {
   return clean({
     title: input.name || input.title,
@@ -147,6 +203,8 @@ async function handleAction(action, payload) {
   switch (action) {
     case "diagnostic":
       return { checks: await runDiagnostic() };
+    case "uploadImage":
+      return uploadImage(payload);
     case "saveClass":
       await saveClass(payload);
       return {};

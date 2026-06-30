@@ -61,7 +61,7 @@ export default function Home() {
         <video
           className="absolute inset-0 w-full h-full object-cover"
           autoPlay muted loop playsInline
-          poster="https://images.unsplash.com/photo-1504609813442-a8924e83f76e?auto=format&fit=crop&w=1800&q=80"
+          poster={homepage.heroImageUrl || DEFAULT_HOMEPAGE.heroImageUrl}
         >
           <source
             src="https://videos.pexels.com/video-files/3209828/3209828-hd_1280_720_30fps.mp4"
@@ -278,7 +278,7 @@ export default function Home() {
               <div className="rounded-3xl overflow-hidden aspect-[4/5] w-full max-w-sm mx-auto"
                 style={{ background: "linear-gradient(145deg, #3a1f3a 0%, #c0185a 60%, #c98b2f 100%)", boxShadow: "0 24px 64px rgba(192,24,90,0.25)" }}>
                 <img
-                  src="https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=600&q=80"
+                  src={homepage.instructorImageUrl || DEFAULT_HOMEPAGE.instructorImageUrl}
                   alt="Anitha Prakash — Founder & Lead Instructor"
                   className="w-full h-full object-cover opacity-80 mix-blend-luminosity"
                 />

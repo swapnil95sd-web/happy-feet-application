@@ -32,6 +32,7 @@ export type HomepageContent = {
   contactPhone: string;
   venmoHandle: string;
   heroImageUrl: string;
+  instructorImageUrl: string;
 };
 
 export type Announcement = {
@@ -148,6 +149,7 @@ export const DEFAULT_HOMEPAGE: HomepageContent = {
   contactPhone: "",
   venmoHandle: "ktanvi",
   heroImageUrl: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?auto=format&fit=crop&w=1800&q=80",
+  instructorImageUrl: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=600&q=80",
 };
 
 function value(row: Record<string, unknown>, camel: string, snake: string, fallback: unknown = "") {
@@ -208,6 +210,7 @@ function homepageFromRow(row: Record<string, unknown> | null): HomepageContent {
     contactPhone: String(value(content, "contactPhone", "contact_phone", DEFAULT_HOMEPAGE.contactPhone)),
     venmoHandle: String(value(content, "venmoHandle", "venmo_handle", DEFAULT_HOMEPAGE.venmoHandle)),
     heroImageUrl: String(value(content, "heroImageUrl", "hero_image_url", DEFAULT_HOMEPAGE.heroImageUrl)),
+    instructorImageUrl: String(value(content, "instructorImageUrl", "instructor_image_url", DEFAULT_HOMEPAGE.instructorImageUrl)),
   };
 }
 
@@ -431,22 +434,15 @@ export async function saveHomepageContent(content: HomepageContent) {
 }
 
 export async function uploadStudioImage(bucket: "class-images" | "gallery" | "site-images" | "instructor-images", file: File) {
-  if (!supabase) throw new Error("Supabase is not configured.");
-  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const safeName = file.name
-    .replace(/\.[^.]+$/, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 48) || "image";
-  const path = `${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}-${safeName}.${extension}`;
-  const { error } = await supabase.storage.from(bucket).upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
+  const dataUrl = await fileToDataUrl(file);
+  const result = await adminWrite<{ imageUrl?: string }>("uploadImage", {
+    bucket,
+    fileName: file.name,
+    contentType: file.type || "image/jpeg",
+    dataUrl,
   });
-  if (error) throw error;
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return data.publicUrl;
+  if (!result.imageUrl) throw new Error("Upload completed but no image URL was returned.");
+  return result.imageUrl;
 }
 
 export async function saveClass(input: Partial<DanceClass>) {
@@ -514,6 +510,15 @@ export async function updateBookingWorkflow(
 
 export async function saveGalleryImage(input: Partial<GalleryImage>) {
   await adminWrite("saveGalleryImage", input);
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Could not read selected image."));
+    reader.readAsDataURL(file);
+  });
 }
 
 async function adminWrite<T extends Record<string, unknown> = Record<string, unknown>>(action: string, payload: unknown): Promise<T> {

@@ -16,7 +16,7 @@ Vercel is configured by `vercel.json` to build the Happy Feet client:
 - `VITE_SUPABASE_URL`: Supabase project URL.
 - `VITE_SUPABASE_ANON_KEY`: Supabase anon public key.
 - `VITE_ADMIN_EMAIL`: admin email used as a fallback while Supabase profile roles are being set up.
-- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key used only by Vercel server functions for admin-only writes such as classes, homepage content, announcements, videos, gallery, and booking updates. Never expose this in frontend code.
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key used only by Vercel server functions for admin-only writes and image uploads. This powers classes, homepage content, announcements, videos, gallery, booking updates, and uploads to Supabase Storage. Never expose this in frontend code.
 
 ## Optional Email Notification Variables
 
