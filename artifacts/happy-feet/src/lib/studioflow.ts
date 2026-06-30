@@ -457,34 +457,23 @@ export async function uploadStudioImage(bucket: "class-images" | "gallery" | "si
 
 export async function saveClass(input: Partial<DanceClass>) {
   if (!supabase) throw new Error("Supabase is not configured.");
-  const payload: Record<string, unknown> = {
-    title: input.name,
-    style: input.style,
-    description: input.description,
-    location: input.location,
-    schedule_day: input.scheduleDay,
-    schedule_time: input.scheduleTime,
-    price: input.price,
-    price_label: input.pricePeriod,
-    duration: input.duration,
-    age_group: input.ageGroup,
-    level: input.category,
-    capacity: input.capacity,
-    featured: input.featured,
-    status: input.status,
-    image_url: input.imageUrl,
-  };
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Please log in again before saving classes.");
 
-  Object.keys(payload).forEach((key) => {
-    if (payload[key] === undefined || payload[key] === "") delete payload[key];
+  const response = await fetch("/api/admin-class", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
   });
 
-  const existingId = input.id && !input.id.startsWith("demo-") ? input.id : null;
-  const result = existingId
-    ? await supabase.from("classes").update(payload).eq("id", existingId).select().single()
-    : await supabase.from("classes").insert(payload).select().single();
-  const { error } = result;
-  if (error) throw error;
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error || "Could not save class.");
+  }
 }
 
 export async function deactivateClass(id: string) {

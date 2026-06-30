@@ -296,7 +296,16 @@ function ClassManager({ classes, onSaved }: { classes: DanceClass[]; onSaved: ()
           <Field label="Age group"><Input value={form.ageGroup ?? ""} onChange={(e) => setForm({ ...form, ageGroup: e.target.value })} /></Field>
           <Field label="Level/category"><Input value={form.category ?? ""} onChange={(e) => setForm({ ...form, category: e.target.value.toLowerCase() })} /></Field>
           <Field label="Capacity"><Input type="number" value={form.capacity ?? 0} onChange={(e) => setForm({ ...form, capacity: Number(e.target.value) })} /></Field>
-          <Field label="Status"><Input value={form.status ?? "active"} onChange={(e) => setForm({ ...form, status: e.target.value })} /></Field>
+          <Field label="Status">
+            <Select value={form.status ?? "active"} onValueChange={(value) => setForm({ ...form, status: value })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">active</SelectItem>
+                <SelectItem value="draft">draft</SelectItem>
+                <SelectItem value="inactive">inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
           <Field label="Class image">
             <div className="space-y-2">
               <Input value={form.imageUrl ?? ""} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
