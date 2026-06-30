@@ -34,6 +34,13 @@ export type Instructor = {
   isActive: boolean;
 };
 
+export type Sentiment = {
+  quote: string;
+  name: string;
+  tag: string;
+  imageUrl?: string;
+};
+
 export type HomepageContent = {
   heroHeadline: string;
   heroSubheadline: string;
@@ -46,6 +53,7 @@ export type HomepageContent = {
   instructorImageUrl: string;
   aboutStory: string;
   instagramUrls: string[];
+  sentiments: Sentiment[];
 };
 
 export type Announcement = {
@@ -166,8 +174,13 @@ export const DEFAULT_HOMEPAGE: HomepageContent = {
   venmoHandle: "ktanvi",
   heroImageUrl: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?auto=format&fit=crop&w=1800&q=80",
   instructorImageUrl: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=600&q=80",
-  aboutStory: "Happy Feet began as a simple idea: create a dance space where people could move boldly and still feel completely at home. What started with Bollywood classes has grown into a warm NYC and New Jersey community for kids, teens, and adults who want confidence, connection, rhythm, and joy.",
+  aboutStory: "For Anitha, dance has never been only about steps. It has been a way to remember home, to tell stories without needing the perfect words, and to help people feel brave inside their own bodies. Happy Feet grew from that belief. What began as a passion for Bollywood, movement, music, and performance became a community where kids, teens, and adults could find confidence, friendship, discipline, joy, and a place to belong. The academy is her way of passing that feeling forward: a space where every dancer is seen, every family feels welcomed, and every class carries the promise that dance can build something bigger than choreography. The future of Happy Feet is rooted in that same dream: more community, more stages, more shared memories, and more people discovering that dance can become a home.",
   instagramUrls: [],
+  sentiments: [
+    { quote: "I walked in nervous and left absolutely hooked. Anitha has a gift for making you feel like you belong.", name: "Priya S.", tag: "Bollywood batch" },
+    { quote: "My daughter went from shy to stage-ready in one semester. The showcase was a full-on performance experience.", name: "Meena R.", tag: "Kids program parent" },
+    { quote: "The BollyHop drop-in is my favorite Saturday morning. I've been coming for three years.", name: "Deepa K.", tag: "Drop-in regular" },
+  ],
 };
 
 const DEMO_INSTRUCTORS: Instructor[] = [
@@ -275,6 +288,17 @@ function homepageFromRow(row: Record<string, unknown> | null): HomepageContent {
       : Array.isArray(content.instagram_urls)
         ? content.instagram_urls.map(String)
         : DEFAULT_HOMEPAGE.instagramUrls,
+    sentiments: Array.isArray(content.sentiments)
+      ? content.sentiments.map((item) => {
+          const sentiment = item as Record<string, unknown>;
+          return {
+            quote: String(sentiment.quote ?? ""),
+            name: String(sentiment.name ?? ""),
+            tag: String(sentiment.tag ?? ""),
+            imageUrl: sentiment.imageUrl ? String(sentiment.imageUrl) : sentiment.image_url ? String(sentiment.image_url) : undefined,
+          };
+        })
+      : DEFAULT_HOMEPAGE.sentiments,
   };
 }
 

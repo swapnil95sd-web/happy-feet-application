@@ -219,6 +219,33 @@ function HomepageEditor({ initial, onSaved }: { initial: HomepageContent; onSave
       setIsUploading(false);
     }
   };
+  const updateSentiment = (index: number, next: Partial<HomepageContent["sentiments"][number]>) => {
+    const sentiments = [...(form.sentiments ?? [])];
+    sentiments[index] = { ...sentiments[index], ...next };
+    setForm({ ...form, sentiments });
+  };
+  const addSentiment = () => {
+    setForm({
+      ...form,
+      sentiments: [...(form.sentiments ?? []), { quote: "", name: "", tag: "", imageUrl: "" }],
+    });
+  };
+  const removeSentiment = (index: number) => {
+    setForm({ ...form, sentiments: (form.sentiments ?? []).filter((_, itemIndex) => itemIndex !== index) });
+  };
+  const uploadSentimentImage = async (index: number, file: File | null) => {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const imageUrl = await uploadStudioImage("site-images", file);
+      updateSentiment(index, { imageUrl });
+      toast({ title: "Sentiment photo uploaded." });
+    } catch (error) {
+      toast({ title: "Could not upload image", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <Card>
@@ -239,6 +266,37 @@ function HomepageEditor({ initial, onSaved }: { initial: HomepageContent; onSave
             onChange={(e) => setForm({ ...form, instagramUrls: e.target.value.split("\n").map((url) => url.trim()).filter(Boolean) })}
           />
         </Field>
+        <div className="space-y-4 sm:col-span-2">
+          <div className="flex items-center justify-between gap-3">
+            <Label>Sentiments</Label>
+            <Button type="button" variant="outline" onClick={addSentiment}>Add Sentiment</Button>
+          </div>
+          <div className="space-y-4">
+            {(form.sentiments ?? []).map((sentiment, index) => (
+              <div key={`${sentiment.name}-${index}`} className="grid gap-3 rounded-xl border p-4 sm:grid-cols-[96px_1fr]">
+                <div className="space-y-2">
+                  {sentiment.imageUrl ? (
+                    <img src={sentiment.imageUrl} alt={sentiment.name || "Sentiment"} className="h-24 w-24 rounded-xl object-cover" />
+                  ) : (
+                    <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-muted text-xs text-muted-foreground">Photo</div>
+                  )}
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold text-secondary transition-colors hover:bg-muted">
+                    <Upload className="h-3.5 w-3.5" />
+                    Upload
+                    <input type="file" accept="image/*" className="sr-only" onChange={(e) => uploadSentimentImage(index, e.target.files?.[0] ?? null)} />
+                  </label>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Input value={sentiment.name} placeholder="Name" onChange={(e) => updateSentiment(index, { name: e.target.value })} />
+                  <Input value={sentiment.tag} placeholder="Label, class, or parent" onChange={(e) => updateSentiment(index, { tag: e.target.value })} />
+                  <Textarea className="sm:col-span-2" value={sentiment.quote} placeholder="What they said" onChange={(e) => updateSentiment(index, { quote: e.target.value })} />
+                  <Input className="sm:col-span-2" value={sentiment.imageUrl ?? ""} placeholder="Optional photo URL" onChange={(e) => updateSentiment(index, { imageUrl: e.target.value })} />
+                  <Button type="button" variant="outline" onClick={() => removeSentiment(index)}>Remove</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         <Field label="Hero image">
           <div className="space-y-2">
             {(form.heroImageUrl || DEFAULT_HOMEPAGE.heroImageUrl) && (

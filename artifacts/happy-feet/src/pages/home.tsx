@@ -255,17 +255,16 @@ export default function Home() {
             From the Happy Feet family
           </p>
           <div className="grid sm:grid-cols-3 gap-8">
-            {[
-              { quote: "I walked in nervous and left absolutely hooked. Anitha has a gift for making you feel like you belong.", name: "Priya S.", tag: "Bollywood batch" },
-              { quote: "My daughter went from shy to stage-ready in one semester. The showcase was a full-on performance experience.", name: "Meena R.", tag: "Kids program parent" },
-              { quote: "The BollyHop drop-in is my favorite Saturday morning. I've been coming for three years.", name: "Deepa K.", tag: "Drop-in regular" },
-            ].map((t) => (
+            {(homepage.sentiments?.length ? homepage.sentiments : DEFAULT_HOMEPAGE.sentiments).map((t) => (
               <div key={t.name} className="rounded-2xl p-7 flex flex-col gap-4"
                 style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <p className="text-sm leading-relaxed italic" style={{ color: "rgba(255,255,255,0.85)" }}>"{t.quote}"</p>
-                <div>
-                  <p className="font-semibold text-sm text-white">{t.name}</p>
-                  <p className="text-xs" style={{ color: "#c98b2f" }}>{t.tag}</p>
+                <div className="flex items-center gap-3">
+                  {t.imageUrl ? <img src={t.imageUrl} alt={t.name} className="h-11 w-11 rounded-full object-cover" /> : null}
+                  <div>
+                    <p className="font-semibold text-sm text-white">{t.name}</p>
+                    <p className="text-xs" style={{ color: "#c98b2f" }}>{t.tag}</p>
+                  </div>
                 </div>
               </div>
             ))}
