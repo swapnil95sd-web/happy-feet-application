@@ -142,22 +142,22 @@ export default function Home() {
       )}
 
       {/* ── WHY HAPPY FEET ───────────────────────────────────── */}
-      <section className="py-24 w-full" style={{ background: "#fffaf6" }}>
+      <section className="py-16 w-full" style={{ background: "linear-gradient(180deg, #fffaf6 0%, #fff5ef 100%)" }}>
         <div className="w-full max-w-6xl mx-auto px-6">
-          <div className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+          <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
             <div className="relative">
-              <div className="overflow-hidden rounded-[28px] shadow-2xl" style={{ background: "linear-gradient(145deg, #3a1f3a, #c0185a)" }}>
+              <div className="overflow-hidden rounded-[24px] shadow-xl" style={{ background: "linear-gradient(145deg, #3a1f3a, #c0185a)" }}>
                 <img
                   src={homepage.instructorImageUrl || DEFAULT_HOMEPAGE.instructorImageUrl}
                   alt="Happy Feet dancers"
-                  className="aspect-[4/5] w-full object-cover opacity-85 mix-blend-luminosity"
+                  className="aspect-[5/4] w-full object-cover opacity-90 mix-blend-luminosity lg:aspect-[4/5]"
                 />
               </div>
-              <div className="absolute -bottom-5 left-5 right-5 rounded-2xl p-5 shadow-xl"
+              <div className="absolute -bottom-4 left-4 right-4 rounded-2xl p-4 shadow-lg"
                 style={{ background: "#fff", border: "1px solid rgba(58,31,58,0.08)" }}>
-                <p className="font-serif text-2xl font-bold" style={{ color: "#3a1f3a" }}>A place to belong.</p>
-                <p className="mt-1 text-sm leading-relaxed" style={{ color: "#6b5b6e" }}>
-                  Students come for choreography, then stay for confidence, friendship, and the feeling of being seen.
+                <p className="font-serif text-xl font-bold" style={{ color: "#3a1f3a" }}>A place to belong.</p>
+                <p className="mt-1 text-xs leading-relaxed sm:text-sm" style={{ color: "#6b5b6e" }}>
+                  Choreography, confidence, friendship, and the feeling of being seen.
                 </p>
               </div>
             </div>
@@ -166,40 +166,27 @@ export default function Home() {
               <p className="text-xs font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#c0185a" }}>
                 Why dancers love it here
               </p>
-              <h2 className="font-serif font-bold leading-tight" style={{ fontSize: "clamp(2.2rem, 4.8vw, 3.8rem)", color: "#3a1f3a" }}>
+              <h2 className="font-serif font-bold leading-tight" style={{ fontSize: "clamp(2rem, 4.2vw, 3.25rem)", color: "#3a1f3a" }}>
                 More than a class.<br />
                 <span style={{ color: "#c0185a" }}>A rhythm you carry home.</span>
               </h2>
-              <p className="mt-5 max-w-2xl text-base leading-relaxed" style={{ color: "#4a3550" }}>
-                Every session is designed to feel personal: clear teaching, expressive choreography, and the kind of encouragement that helps dancers walk taller after class.
+              <p className="mt-4 max-w-2xl text-base leading-relaxed" style={{ color: "#4a3550" }}>
+                Clear teaching, expressive choreography, and encouragement that helps dancers walk taller after class.
               </p>
 
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <div className="mt-6 grid gap-3">
                 {[
-                  ["All ages", "Kids, teens, adults"],
-                  ["NYC + NJ", "Local batches"],
-                  ["Showcase ready", "Stage confidence"],
-                ].map(([value, label]) => (
-                  <div key={value} className="rounded-2xl bg-white p-5 shadow-sm" style={{ border: "1px solid rgba(58,31,58,0.08)" }}>
-                    <p className="font-serif text-2xl font-bold" style={{ color: "#c0185a" }}>{value}</p>
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: "#8a758e" }}>{label}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 grid gap-4">
-                {[
-                  { icon: HeartHandshake, title: "Warm, personal coaching", body: "Beginners feel safe, returning dancers feel challenged, and everyone gets real attention." },
-                  { icon: CheckCircle2, title: "Clear levels and batches", body: "Families can quickly understand age group, schedule, location, price, and what the class is for." },
-                  { icon: MessageCircle, title: "Real follow-up", body: "After booking, the studio follows up directly so payment, class details, and next steps feel simple." },
+                  { icon: HeartHandshake, title: "Warm coaching", body: "Beginners feel safe, returning dancers feel challenged, and everyone gets real attention." },
+                  { icon: CheckCircle2, title: "Easy choices", body: "Age group, schedule, level, and price are simple to understand before booking." },
+                  { icon: MessageCircle, title: "Real follow-up", body: "After booking, the studio follows up so payment and next steps feel simple." },
                 ].map(({ icon: Icon, title, body }) => (
-                  <div key={title} className="grid grid-cols-[48px_1fr] gap-4 rounded-2xl bg-white p-5 shadow-sm"
+                  <div key={title} className="grid grid-cols-[44px_1fr] gap-4 rounded-2xl bg-white/90 p-4 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-md"
                     style={{ border: "1px solid rgba(58,31,58,0.08)" }}>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full" style={{ background: "rgba(192,24,90,0.1)", color: "#c0185a" }}>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full" style={{ background: "rgba(192,24,90,0.1)", color: "#c0185a" }}>
                       <Icon className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-serif font-bold text-lg" style={{ color: "#3a1f3a" }}>{title}</h3>
+                      <h3 className="font-serif font-bold text-base" style={{ color: "#3a1f3a" }}>{title}</h3>
                       <p className="mt-1 text-sm leading-relaxed" style={{ color: "#6b5b6e" }}>{body}</p>
                     </div>
                   </div>
@@ -210,9 +197,9 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 w-full" style={{ background: "#f9f3ef" }}>
+      <section className="py-16 w-full" style={{ background: "linear-gradient(180deg, #fff5ef 0%, #f9f3ef 100%)" }}>
         <div className="mx-auto w-full max-w-6xl px-6">
-          <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: "#c0185a" }}>How booking works</p>
               <h2 className="font-serif font-bold leading-tight" style={{ fontSize: "clamp(2rem, 4vw, 3rem)", color: "#3a1f3a" }}>
@@ -230,17 +217,17 @@ export default function Home() {
               { icon: CreditCard, step: "02", title: "Request your spot", body: "Share contact details and follow the payment note if payment is due now." },
               { icon: CheckCircle2, step: "03", title: "Get confirmed", body: "Happy Feet reviews the request and follows up with final details." },
             ].map(({ icon: Icon, step, title, body }) => (
-              <div key={title} className="relative overflow-hidden rounded-3xl bg-white p-7 shadow-sm"
+              <div key={title} className="relative overflow-hidden rounded-[24px] bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
                 style={{ border: "1px solid rgba(58,31,58,0.08)" }}>
-                <div className="absolute -right-6 -top-8 font-serif text-8xl font-bold" style={{ color: "rgba(192,24,90,0.06)" }}>
+                <div className="pointer-events-none absolute right-5 top-4 font-serif text-6xl font-bold sm:text-7xl" style={{ color: "rgba(192,24,90,0.055)" }}>
                   {step}
                 </div>
                 <div className="relative">
-                  <div className="mb-7 flex items-center justify-between">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: "#3a1f3a", color: "#fff" }}>
+                  <div className="mb-7 flex items-center justify-between gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm" style={{ background: "#3a1f3a", color: "#fff" }}>
                       <Icon className="h-6 w-6" />
                     </div>
-                    <span className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em]" style={{ background: "rgba(201,139,47,0.12)", color: "#9b631b" }}>
+                    <span className="relative z-10 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em]" style={{ background: "rgba(201,139,47,0.14)", color: "#9b631b" }}>
                       Step {step}
                     </span>
                   </div>
@@ -251,7 +238,7 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="mt-6 rounded-3xl p-6 text-center shadow-sm"
+          <div className="mt-6 rounded-[24px] p-6 text-center shadow-sm"
             style={{ background: "linear-gradient(135deg, rgba(192,24,90,0.08), rgba(201,139,47,0.12))", border: "1px solid rgba(192,24,90,0.12)" }}>
             <p className="text-sm font-semibold" style={{ color: "#3a1f3a" }}>
               Not sure which class fits? Submit a request anyway. The studio will guide you to the right batch.
@@ -261,7 +248,7 @@ export default function Home() {
       </section>
 
       {/* ── CLASSES GRID ─────────────────────────────────────── */}
-      <section id="classes" className="py-20 w-full" style={{ background: "#f9f3ef" }}>
+      <section id="classes" className="py-20 w-full" style={{ background: "linear-gradient(180deg, #f9f3ef 0%, #fffaf6 100%)" }}>
         <div className="w-full max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
             <p className="text-xs font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#c0185a" }}>
@@ -279,10 +266,10 @@ export default function Home() {
           <div className="flex flex-wrap justify-center gap-2 mb-10">
             {CATEGORY_FILTERS.map((cat) => (
               <button key={cat} onClick={() => setActiveCategory(cat)}
-                className="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200"
+                className="px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
                 style={activeCategory === cat
-                  ? { background: "#3a1f3a", color: "#fff", boxShadow: "0 2px 12px rgba(58,31,58,0.3)" }
-                  : { background: "#fff", color: "#6b5b6e", border: "1px solid rgba(58,31,58,0.15)" }}>
+                  ? { background: "#3a1f3a", color: "#fff", boxShadow: "0 8px 24px rgba(58,31,58,0.22)" }
+                  : { background: "rgba(255,255,255,0.82)", color: "#6b5b6e", border: "1px solid rgba(58,31,58,0.12)", boxShadow: "0 4px 14px rgba(58,31,58,0.04)" }}>
                 {cat}
               </button>
             ))}
@@ -312,7 +299,7 @@ export default function Home() {
       </section>
 
       {/* ── TESTIMONIALS ─────────────────────────────────────── */}
-      <section className="py-16 w-full" style={{ background: "linear-gradient(135deg, #3a1f3a, #5c2f5c)" }}>
+      <section className="py-16 w-full" style={{ background: "radial-gradient(circle at top left, rgba(201,139,47,0.28), transparent 32%), linear-gradient(135deg, #3a1f3a, #5c2f5c)" }}>
         <div className="w-full max-w-5xl mx-auto px-6">
           <p className="text-center text-xs font-bold uppercase tracking-[0.2em] mb-10"
             style={{ color: "rgba(249,221,234,0.7)" }}>
@@ -320,7 +307,7 @@ export default function Home() {
           </p>
           <div className="grid sm:grid-cols-3 gap-8">
             {(homepage.sentiments?.length ? homepage.sentiments : DEFAULT_HOMEPAGE.sentiments).map((t) => (
-              <div key={t.name} className="rounded-2xl p-7 flex flex-col gap-4"
+              <div key={t.name} className="rounded-2xl p-7 flex flex-col gap-4 transition duration-300 hover:-translate-y-1"
                 style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 <p className="text-sm leading-relaxed italic" style={{ color: "rgba(255,255,255,0.85)" }}>"{t.quote}"</p>
                 <div className="flex items-center gap-3">
