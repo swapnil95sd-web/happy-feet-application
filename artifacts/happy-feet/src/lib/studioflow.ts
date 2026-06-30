@@ -44,6 +44,8 @@ export type HomepageContent = {
   venmoHandle: string;
   heroImageUrl: string;
   instructorImageUrl: string;
+  aboutStory: string;
+  instagramUrls: string[];
 };
 
 export type Announcement = {
@@ -164,6 +166,8 @@ export const DEFAULT_HOMEPAGE: HomepageContent = {
   venmoHandle: "ktanvi",
   heroImageUrl: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?auto=format&fit=crop&w=1800&q=80",
   instructorImageUrl: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=600&q=80",
+  aboutStory: "Happy Feet began as a simple idea: create a dance space where people could move boldly and still feel completely at home. What started with Bollywood classes has grown into a warm NYC and New Jersey community for kids, teens, and adults who want confidence, connection, rhythm, and joy.",
+  instagramUrls: [],
 };
 
 const DEMO_INSTRUCTORS: Instructor[] = [
@@ -265,6 +269,12 @@ function homepageFromRow(row: Record<string, unknown> | null): HomepageContent {
     venmoHandle: String(value(content, "venmoHandle", "venmo_handle", DEFAULT_HOMEPAGE.venmoHandle)),
     heroImageUrl: String(value(content, "heroImageUrl", "hero_image_url", DEFAULT_HOMEPAGE.heroImageUrl)),
     instructorImageUrl: String(value(content, "instructorImageUrl", "instructor_image_url", DEFAULT_HOMEPAGE.instructorImageUrl)),
+    aboutStory: String(value(content, "aboutStory", "about_story", DEFAULT_HOMEPAGE.aboutStory)),
+    instagramUrls: Array.isArray(content.instagramUrls)
+      ? content.instagramUrls.map(String)
+      : Array.isArray(content.instagram_urls)
+        ? content.instagram_urls.map(String)
+        : DEFAULT_HOMEPAGE.instagramUrls,
   };
 }
 

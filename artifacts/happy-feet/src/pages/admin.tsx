@@ -231,6 +231,14 @@ function HomepageEditor({ initial, onSaved }: { initial: HomepageContent; onSave
         <Field label="Contact email"><Input value={form.contactEmail} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} /></Field>
         <Field label="Contact phone"><Input value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} /></Field>
         <Field label="Venmo handle"><Input value={form.venmoHandle} onChange={(e) => setForm({ ...form, venmoHandle: e.target.value })} /></Field>
+        <Field label="About story"><Textarea value={form.aboutStory ?? ""} onChange={(e) => setForm({ ...form, aboutStory: e.target.value })} /></Field>
+        <Field label="Instagram reel/post URLs">
+          <Textarea
+            value={(form.instagramUrls ?? []).join("\n")}
+            placeholder="Paste one public Instagram Reel/Post URL per line"
+            onChange={(e) => setForm({ ...form, instagramUrls: e.target.value.split("\n").map((url) => url.trim()).filter(Boolean) })}
+          />
+        </Field>
         <Field label="Hero image">
           <div className="space-y-2">
             {(form.heroImageUrl || DEFAULT_HOMEPAGE.heroImageUrl) && (

@@ -17,12 +17,26 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/supabase";
 
+type NavLink =
+  | { type: "button"; label: string; section: string }
+  | { type: "link"; label: string; href: string };
+
+function scrollToHomeSection(id: string) {
+  if (window.location.pathname !== "/") {
+    window.location.href = `/#${id}`;
+    return;
+  }
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+}
+
 export function Navigation() {
   const [location] = useLocation();
   const { user, profile, isAuthenticated, isLoading, logout } = useAuth();
 
-  const links = [
-    { href: "/", label: "Classes" },
+  const links: NavLink[] = [
+    { type: "button", label: "Book Class", section: "classes" },
+    { type: "button", label: "Meet Instructor", section: "instructor" },
+    { type: "link", label: "About Us", href: "/about" },
   ];
 
   const displayName = profile?.fullName ?? user?.email ?? "StudioFlow user";
@@ -52,19 +66,26 @@ export function Navigation() {
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6">
           {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                location === link.href ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              {link.label}
-            </Link>
+            link.type === "link" ? (
+              <Link
+                key={link.label}
+                href={link.href}
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  location === link.href ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <button
+                key={link.label}
+                onClick={() => scrollToHomeSection(link.section)}
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              >
+                {link.label}
+              </button>
+            )
           ))}
-          <Button asChild className="ml-2 rounded-full px-6 bg-primary text-primary-foreground hover:bg-primary/90">
-            <Link href="/#classes">Book a Class</Link>
-          </Button>
 
           {!isLoading && (
             isAuthenticated ? (
@@ -117,19 +138,26 @@ export function Navigation() {
           <SheetContent side="right" className="w-[300px] sm:w-[400px]">
             <nav className="flex flex-col gap-4 mt-8">
               {links.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`text-lg font-medium transition-colors hover:text-primary ${
-                    location === link.href ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  {link.label}
-                </Link>
+                link.type === "link" ? (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className={`text-lg font-medium transition-colors hover:text-primary ${
+                      location === link.href ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <button
+                    key={link.label}
+                    onClick={() => scrollToHomeSection(link.section)}
+                    className="text-left text-lg font-medium text-muted-foreground transition-colors hover:text-primary"
+                  >
+                    {link.label}
+                  </button>
+                )
               ))}
-              <Button asChild className="mt-4 rounded-full bg-primary text-primary-foreground">
-                <Link href="/#classes">Book a Class</Link>
-              </Button>
               <div className="mt-4 pt-4 border-t">
                 {isAuthenticated ? (
                   <div className="flex flex-col gap-3">
