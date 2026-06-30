@@ -155,12 +155,30 @@ function classPayload(input) {
     price_label: input.pricePeriod || input.price_label,
     duration: input.duration,
     age_group: input.ageGroup || input.age_group,
+    instructor_id: input.instructorId || input.instructor_id || null,
     level: input.category || input.level,
     capacity: Number(input.capacity || 20),
     featured: Boolean(input.featured),
     status: ["active", "inactive", "draft"].includes(input.status) ? input.status : "active",
     image_url: input.imageUrl || input.image_url || null,
     updated_at: new Date().toISOString(),
+  });
+}
+
+function instructorPayload(input) {
+  const specialties = Array.isArray(input.specialties)
+    ? input.specialties
+    : String(input.specialties || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  return clean({
+    name: input.name,
+    email: input.email || null,
+    bio: input.bio || null,
+    specialties,
+    image_url: input.imageUrl || input.image_url || null,
+    is_active: input.isActive !== false,
   });
 }
 
@@ -207,6 +225,27 @@ async function handleAction(action, payload) {
       return uploadImage(payload);
     case "saveClass":
       await saveClass(payload);
+      return {};
+    case "saveInstructor": {
+      const id = typeof payload.id === "string" && !payload.id.startsWith("demo-") ? payload.id : null;
+      if (id) {
+        await supabaseFetch(`/rest/v1/instructors?id=eq.${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          body: JSON.stringify(instructorPayload(payload)),
+        });
+      } else {
+        await supabaseFetch("/rest/v1/instructors", {
+          method: "POST",
+          body: JSON.stringify(instructorPayload(payload)),
+        });
+      }
+      return {};
+    }
+    case "deactivateInstructor":
+      await supabaseFetch(`/rest/v1/instructors?id=eq.${encodeURIComponent(payload.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ is_active: false }),
+      });
       return {};
     case "deactivateClass":
       await supabaseFetch(`/rest/v1/classes?id=eq.${encodeURIComponent(payload.id)}`, {

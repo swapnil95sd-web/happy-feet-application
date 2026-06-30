@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { BookOpen, CalendarDays, Download, Image, LayoutDashboard, Megaphone, Plus, Settings, Upload, Video } from "lucide-react";
+import { BookOpen, CalendarDays, Download, Image, LayoutDashboard, Megaphone, Plus, Settings, Upload, Users, Video } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,11 +12,13 @@ import { useToast } from "@/hooks/use-toast";
 import {
   DEFAULT_HOMEPAGE,
   deactivateClass,
+  deactivateInstructor,
   runClassSaveDiagnostic,
   saveAnnouncement,
   saveClass,
   saveGalleryImage,
   saveHomepageContent,
+  saveInstructor,
   savePracticeVideo,
   updateBookingWorkflow,
   uploadStudioImage,
@@ -25,12 +27,14 @@ import {
   type DanceClass,
   type GalleryImage,
   type HomepageContent,
+  type Instructor,
   type PracticeVideo,
   useAdminStats,
   useAnnouncements,
   useBookings,
   useGalleryImages,
   useHomepageContent,
+  useInstructors,
   usePracticeVideos,
   useStudioClasses,
 } from "@/lib/studioflow";
@@ -38,6 +42,7 @@ import {
 const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "content", label: "Homepage", icon: Settings },
+  { id: "instructors", label: "Instructors", icon: Users },
   { id: "classes", label: "Classes", icon: BookOpen },
   { id: "bookings", label: "Bookings", icon: CalendarDays },
   { id: "announcements", label: "Announcements", icon: Megaphone },
@@ -50,6 +55,7 @@ const EMPTY_CLASS: Partial<DanceClass> = {
   style: "",
   description: "",
   instructor: "Anitha Prakash",
+  instructorId: null,
   location: "",
   scheduleDay: "",
   scheduleTime: "",
@@ -70,6 +76,7 @@ export default function Admin() {
   const classesQuery = useStudioClasses();
   const homepageQuery = useHomepageContent();
   const announcementsQuery = useAnnouncements();
+  const instructorsQuery = useInstructors();
   const videosQuery = usePracticeVideos();
   const bookingsQuery = useBookings();
   const galleryQuery = useGalleryImages();
@@ -79,6 +86,7 @@ export default function Admin() {
     classesQuery.refetch();
     homepageQuery.refetch();
     announcementsQuery.refetch();
+    instructorsQuery.refetch();
     videosQuery.refetch();
     bookingsQuery.refetch();
     galleryQuery.refetch();
@@ -114,7 +122,8 @@ export default function Admin() {
           <main className="min-w-0 space-y-6">
             {activeTab === "overview" && <Overview stats={stats} bookings={bookingsQuery.data} classes={classesQuery.data} />}
             {activeTab === "content" && <HomepageEditor initial={homepageQuery.data} onSaved={refreshAll} />}
-            {activeTab === "classes" && <ClassManager classes={classesQuery.data} onSaved={refreshAll} />}
+            {activeTab === "instructors" && <InstructorsManager instructors={instructorsQuery.data} classes={classesQuery.data} bookings={bookingsQuery.data} onSaved={refreshAll} />}
+            {activeTab === "classes" && <ClassManager classes={classesQuery.data} instructors={instructorsQuery.data} onSaved={refreshAll} />}
             {activeTab === "bookings" && <BookingsManager bookings={bookingsQuery.data} onSaved={refreshAll} />}
             {activeTab === "announcements" && <AnnouncementsManager announcements={announcementsQuery.data} onSaved={refreshAll} />}
             {activeTab === "videos" && <VideosManager videos={videosQuery.data} classes={classesQuery.data} onSaved={refreshAll} />}
@@ -254,7 +263,128 @@ function HomepageEditor({ initial, onSaved }: { initial: HomepageContent; onSave
   );
 }
 
-function ClassManager({ classes, onSaved }: { classes: DanceClass[]; onSaved: () => void }) {
+function InstructorsManager({
+  instructors,
+  classes,
+  bookings,
+  onSaved,
+}: {
+  instructors: Instructor[];
+  classes: DanceClass[];
+  bookings: Booking[];
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState<Partial<Instructor>>({ name: "", email: "", bio: "", specialties: [], imageUrl: "", isActive: true });
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
+
+  const edit = (instructor: Instructor) => setForm(instructor);
+  const save = async () => {
+    try {
+      await saveInstructor(form);
+      toast({ title: "Instructor saved." });
+      setForm({ name: "", email: "", bio: "", specialties: [], imageUrl: "", isActive: true });
+      onSaved();
+    } catch (error) {
+      toast({ title: "Could not save instructor", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    }
+  };
+  const remove = async (id: string) => {
+    try {
+      await deactivateInstructor(id);
+      toast({ title: "Instructor removed from active list." });
+      onSaved();
+    } catch (error) {
+      toast({ title: "Could not remove instructor", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    }
+  };
+  const uploadImage = async (file: File | null) => {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const imageUrl = await uploadStudioImage("instructor-images", file);
+      setForm({ ...form, imageUrl });
+      toast({ title: "Instructor image uploaded." });
+    } catch (error) {
+      toast({ title: "Could not upload image", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const specialtiesText = Array.isArray(form.specialties) ? form.specialties.join(", ") : "";
+  const activeInstructors = instructors.filter((instructor) => instructor.isActive);
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2 text-base text-secondary"><Plus className="h-4 w-4" /> Add or Edit Instructor</CardTitle></CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <Field label="Name"><Input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
+          <Field label="Email"><Input value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
+          <Field label="Specialties"><Input value={specialtiesText} placeholder="Bollywood, Kids, Hip-Hop" onChange={(e) => setForm({ ...form, specialties: e.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></Field>
+          <Field label="Status">
+            <Select value={form.isActive === false ? "inactive" : "active"} onValueChange={(value) => setForm({ ...form, isActive: value === "active" })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">active</SelectItem>
+                <SelectItem value="inactive">inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Instructor image">
+            <div className="space-y-2">
+              {form.imageUrl && <img src={form.imageUrl} alt="Instructor preview" className="h-32 w-full rounded-xl object-cover" />}
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-secondary/90">
+                <Upload className="h-4 w-4" />
+                {isUploading ? "Uploading..." : "Upload instructor image"}
+                <input type="file" accept="image/*" className="sr-only" onChange={(e) => uploadImage(e.target.files?.[0] ?? null)} />
+              </label>
+              <Input value={form.imageUrl ?? ""} placeholder="Optional image URL" onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
+            </div>
+          </Field>
+          <Field label="Bio"><Textarea value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} /></Field>
+          <div className="flex gap-2 sm:col-span-2">
+            <Button onClick={save}>Save Instructor</Button>
+            <Button variant="outline" onClick={() => setForm({ name: "", email: "", bio: "", specialties: [], imageUrl: "", isActive: true })}>Clear</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base text-secondary">Instructor Overview</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          {activeInstructors.map((instructor) => {
+            const instructorClasses = classes.filter((c) => c.instructorId === instructor.id || c.instructor === instructor.name);
+            const studentCount = bookings.filter((booking) => instructorClasses.some((c) => c.id === booking.classId)).length;
+            return (
+              <div key={instructor.id} className="grid gap-4 rounded-xl border p-4 md:grid-cols-[96px_1fr_auto] md:items-center">
+                {instructor.imageUrl ? <img src={instructor.imageUrl} alt={instructor.name} className="h-24 w-24 rounded-xl object-cover" /> : <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-muted text-xl font-bold text-secondary">{instructor.name.slice(0, 1)}</div>}
+                <div>
+                  <p className="font-semibold text-secondary">{instructor.name}</p>
+                  <p className="text-sm text-muted-foreground">{instructor.specialties.join(", ") || "No specialties listed"}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{instructorClasses.length} upcoming class{instructorClasses.length === 1 ? "" : "es"} - {studentCount} student registration{studentCount === 1 ? "" : "s"}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {instructorClasses.map((danceClass) => (
+                      <Badge key={danceClass.id} variant="outline">{danceClass.name}: {bookings.filter((booking) => booking.classId === danceClass.id).length}</Badge>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => edit(instructor)}>Edit</Button>
+                  {!instructor.id.startsWith("demo-") && <Button variant="outline" onClick={() => remove(instructor.id)}>Remove</Button>}
+                </div>
+              </div>
+            );
+          })}
+          {!activeInstructors.length && <p className="text-sm text-muted-foreground">No instructors yet.</p>}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ClassManager({ classes, instructors, onSaved }: { classes: DanceClass[]; instructors: Instructor[]; onSaved: () => void }) {
   const [form, setForm] = useState<Partial<DanceClass>>(EMPTY_CLASS);
   const [isUploading, setIsUploading] = useState(false);
   const [diagnostic, setDiagnostic] = useState<string>("");
@@ -338,6 +468,20 @@ function ClassManager({ classes, onSaved }: { classes: DanceClass[]; onSaved: ()
           <Field label="Schedule time"><Input value={form.scheduleTime ?? ""} onChange={(e) => setForm({ ...form, scheduleTime: e.target.value })} /></Field>
           <Field label="Price"><Input type="number" value={form.price ?? 0} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} /></Field>
           <Field label="Age group"><Input value={form.ageGroup ?? ""} onChange={(e) => setForm({ ...form, ageGroup: e.target.value })} /></Field>
+          <Field label="Instructor">
+            <Select value={form.instructorId || "none"} onValueChange={(value) => {
+              const instructor = instructors.find((item) => item.id === value);
+              setForm({ ...form, instructorId: value === "none" ? null : value, instructor: instructor?.name ?? form.instructor });
+            }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No instructor</SelectItem>
+                {instructors.filter((instructor) => instructor.isActive && !instructor.id.startsWith("demo-")).map((instructor) => (
+                  <SelectItem key={instructor.id} value={instructor.id}>{instructor.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
           <Field label="Level/category"><Input value={form.category ?? ""} onChange={(e) => setForm({ ...form, category: e.target.value.toLowerCase() })} /></Field>
           <Field label="Capacity"><Input type="number" value={form.capacity ?? 0} onChange={(e) => setForm({ ...form, capacity: Number(e.target.value) })} /></Field>
           <Field label="Status">

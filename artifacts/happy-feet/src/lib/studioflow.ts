@@ -6,6 +6,7 @@ export type DanceClass = {
   name: string;
   style: string;
   description: string;
+  instructorId: string | null;
   instructor: string;
   location: string;
   scheduleDay: string;
@@ -21,6 +22,16 @@ export type DanceClass = {
   status: string;
   featured: boolean;
   imageUrl: string | null;
+};
+
+export type Instructor = {
+  id: string;
+  name: string;
+  email: string;
+  bio: string;
+  specialties: string[];
+  imageUrl: string | null;
+  isActive: boolean;
 };
 
 export type HomepageContent = {
@@ -80,6 +91,7 @@ const DEMO_CLASSES: DanceClass[] = [
     name: "Bollywood Performance Lab",
     style: "Bollywood",
     description: "A joyful adult batch focused on expressive choreography, stage confidence, and strong foundations.",
+    instructorId: "demo-anitha",
     instructor: "Anitha Prakash",
     location: "Jersey City Studio",
     scheduleDay: "Monday",
@@ -101,6 +113,7 @@ const DEMO_CLASSES: DanceClass[] = [
     name: "Kids Bollywood Basics",
     style: "Bollywood",
     description: "A warm beginner-friendly class for younger dancers building rhythm, confidence, and stage presence.",
+    instructorId: "demo-gauthami",
     instructor: "Anitha Prakash",
     location: "Edison Community Center",
     scheduleDay: "Sunday",
@@ -122,6 +135,7 @@ const DEMO_CLASSES: DanceClass[] = [
     name: "BollyHop Beginner Drop-In",
     style: "BollyHop",
     description: "A high-energy Saturday drop-in blending Bollywood grooves with hip-hop textures.",
+    instructorId: "demo-aashit",
     instructor: "Anitha Prakash",
     location: "NYC Midtown Studio",
     scheduleDay: "Saturday",
@@ -152,6 +166,45 @@ export const DEFAULT_HOMEPAGE: HomepageContent = {
   instructorImageUrl: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=600&q=80",
 };
 
+const DEMO_INSTRUCTORS: Instructor[] = [
+  {
+    id: "demo-anitha",
+    name: "Anitha Prakash",
+    email: "",
+    bio: "Founder and lead instructor for Happy Feet.",
+    specialties: ["Bollywood", "Showcase", "BollyHop"],
+    imageUrl: DEFAULT_HOMEPAGE.instructorImageUrl,
+    isActive: true,
+  },
+  {
+    id: "demo-gauthami",
+    name: "Gauthami",
+    email: "",
+    bio: "Warm, confidence-building instructor for foundations and kids classes.",
+    specialties: ["Bollywood", "Kids"],
+    imageUrl: null,
+    isActive: true,
+  },
+  {
+    id: "demo-aashit",
+    name: "Aashit",
+    email: "",
+    bio: "High-energy instructor for rhythm, performance, and BollyHop flow.",
+    specialties: ["BollyHop", "Hip-Hop"],
+    imageUrl: null,
+    isActive: true,
+  },
+  {
+    id: "demo-mehek",
+    name: "Mehek",
+    email: "",
+    bio: "Expressive instructor focused on choreography, presence, and musicality.",
+    specialties: ["Bollywood", "Semi-Classical"],
+    imageUrl: null,
+    isActive: true,
+  },
+];
+
 function value(row: Record<string, unknown>, camel: string, snake: string, fallback: unknown = "") {
   return row[snake] ?? row[camel] ?? fallback;
 }
@@ -174,7 +227,8 @@ function mapClass(row: Record<string, unknown>): DanceClass {
     name: String(value(row, "name", "title", value(row, "title", "name", "Untitled class"))),
     style,
     description: String(value(row, "description", "description", "")),
-    instructor: String(value(row, "instructor", "instructor_name", "Anitha Prakash")),
+    instructorId: row.instructor_id ? String(row.instructor_id) : null,
+    instructor: String((row.instructors as { name?: string } | null | undefined)?.name ?? value(row, "instructor", "instructor_name", "Anitha Prakash")),
     location: String(value(row, "location", "location", "")),
     scheduleDay: String(value(row, "scheduleDay", "schedule_day", value(row, "schedule", "schedule", ""))),
     scheduleTime: String(value(row, "scheduleTime", "schedule_time", "")),
@@ -214,6 +268,14 @@ function homepageFromRow(row: Record<string, unknown> | null): HomepageContent {
   };
 }
 
+function mergeInstructorStarters(instructors: Instructor[]) {
+  const names = new Set(instructors.map((instructor) => instructor.name.toLowerCase()));
+  return [
+    ...instructors,
+    ...DEMO_INSTRUCTORS.filter((instructor) => !names.has(instructor.name.toLowerCase())),
+  ];
+}
+
 export function useStudioClasses(category?: string) {
   const [data, setData] = useState<DanceClass[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -233,7 +295,7 @@ export function useStudioClasses(category?: string) {
         return;
       }
 
-      const query = supabase.from("classes").select("*").order("featured", { ascending: false });
+      const query = supabase.from("classes").select("*, instructors(name)").order("featured", { ascending: false });
       const { data: rows, error } = await query;
       if (!cancelled) {
         const mapped = error || !rows ? [] : rows.map((row) => mapClass(row as Record<string, unknown>));
@@ -266,6 +328,43 @@ export function useHomepageContent() {
       }
       const { data: row } = await supabase.from("site_content").select("*").eq("key", "homepage").maybeSingle();
       setData(homepageFromRow((row as Record<string, unknown> | null) ?? null));
+      setIsLoading(false);
+    }
+    void load();
+  }, [version]);
+
+  return { data, isLoading, refetch };
+}
+
+export function useInstructors() {
+  const [data, setData] = useState<Instructor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [version, setVersion] = useState(0);
+  const refetch = useCallback(() => setVersion((v) => v + 1), []);
+
+  useEffect(() => {
+    async function load() {
+      setIsLoading(true);
+      if (!supabase) {
+        setData(DEMO_INSTRUCTORS);
+        setIsLoading(false);
+        return;
+      }
+      const { data: rows, error } = await supabase.from("instructors").select("*").order("created_at", { ascending: true });
+      if (error || !rows?.length) {
+        setData(DEMO_INSTRUCTORS);
+      } else {
+        const mapped = rows.map((row) => ({
+            id: String(row.id),
+            name: String(row.name ?? ""),
+            email: String(row.email ?? ""),
+            bio: String(row.bio ?? ""),
+            specialties: Array.isArray(row.specialties) ? row.specialties.map(String) : [],
+            imageUrl: (row.image_url ?? null) as string | null,
+            isActive: row.is_active !== false,
+          }));
+        setData(mergeInstructorStarters(mapped));
+      }
       setIsLoading(false);
     }
     void load();
@@ -447,6 +546,14 @@ export async function uploadStudioImage(bucket: "class-images" | "gallery" | "si
 
 export async function saveClass(input: Partial<DanceClass>) {
   await adminWrite("saveClass", input);
+}
+
+export async function saveInstructor(input: Partial<Instructor>) {
+  await adminWrite("saveInstructor", input);
+}
+
+export async function deactivateInstructor(id: string) {
+  await adminWrite("deactivateInstructor", { id });
 }
 
 export async function runClassSaveDiagnostic() {

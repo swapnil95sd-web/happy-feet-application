@@ -14,8 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 import {
   createBooking,
   type DanceClass,
+  type Instructor,
   DEFAULT_HOMEPAGE,
   useHomepageContent,
+  useInstructors,
   useStudioClasses,
 } from "@/lib/studioflow";
 
@@ -43,6 +45,7 @@ export default function Home() {
   const selectedCategory = activeCategory !== "All" ? activeCategory.toLowerCase() : undefined;
   const { data: classes, isLoading } = useStudioClasses(selectedCategory);
   const { data: homepage } = useHomepageContent();
+  const { data: instructors } = useInstructors();
   const instructorRef = useRef<HTMLElement>(null);
 
   const scrollToClasses = () =>
@@ -320,6 +323,8 @@ export default function Home() {
         </div>
       </section>
 
+      <OtherInstructors instructors={instructors.filter((instructor) => instructor.isActive && instructor.name !== "Anitha Prakash")} />
+
       {/* ── BOTTOM CTA ───────────────────────────────────────── */}
       <section className="py-20 w-full"
         style={{ background: "linear-gradient(135deg, #c0185a 0%, #3a1f3a 100%)" }}>
@@ -372,6 +377,48 @@ export default function Home() {
         </button>
       </div>
     </div>
+  );
+}
+
+function OtherInstructors({ instructors }: { instructors: Instructor[] }) {
+  if (!instructors.length) return null;
+  return (
+    <section className="py-20 w-full" style={{ background: "#f9f3ef" }}>
+      <div className="w-full max-w-6xl mx-auto px-6">
+        <div className="mb-12 text-center">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: "#c0185a" }}>
+            More instructors
+          </p>
+          <h2 className="font-serif font-bold" style={{ fontSize: "clamp(2rem, 4vw, 3rem)", color: "#3a1f3a" }}>
+            Learn with the Happy Feet team.
+          </h2>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {instructors.map((instructor) => (
+            <div key={instructor.id} className="overflow-hidden rounded-2xl bg-white shadow-sm" style={{ border: "1px solid rgba(58,31,58,0.08)" }}>
+              <div className="aspect-[4/3] overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(192,24,90,0.12), rgba(201,139,47,0.12))" }}>
+                {instructor.imageUrl ? (
+                  <img src={instructor.imageUrl} alt={instructor.name} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full items-center justify-center font-serif text-5xl font-bold" style={{ color: "#c0185a" }}>
+                    {instructor.name.slice(0, 1)}
+                  </div>
+                )}
+              </div>
+              <div className="p-6">
+                <h3 className="font-serif text-xl font-bold" style={{ color: "#3a1f3a" }}>{instructor.name}</h3>
+                {instructor.specialties.length > 0 && (
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: "#c0185a" }}>
+                    {instructor.specialties.join(" / ")}
+                  </p>
+                )}
+                {instructor.bio && <p className="mt-3 text-sm leading-relaxed" style={{ color: "#6b5b6e" }}>{instructor.bio}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
