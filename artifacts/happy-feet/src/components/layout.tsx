@@ -29,6 +29,14 @@ function scrollToHomeSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 }
 
+function goHomeTop() {
+  if (window.location.pathname !== "/") {
+    window.location.href = "/";
+    return;
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 export function Navigation() {
   const [location] = useLocation();
   const { user, profile, isAuthenticated, isLoading, logout } = useAuth();
@@ -53,7 +61,7 @@ export function Navigation() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3">
+        <button onClick={goHomeTop} className="flex items-center gap-3 text-left">
           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-serif font-bold text-lg shadow-sm">
             HF
           </div>
@@ -61,7 +69,7 @@ export function Navigation() {
             <span className="font-serif font-bold text-lg leading-tight text-foreground">Happy Feet</span>
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Dance boldly. Feel at home.</span>
           </div>
-        </Link>
+        </button>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6">

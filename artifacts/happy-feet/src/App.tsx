@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,7 +8,7 @@ import Home from "@/pages/home";
 import About from "@/pages/about";
 import Admin from "@/pages/admin";
 import { AuthProvider, type StudioRole, useAuth } from "@/lib/supabase";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ComponentType, FormEvent } from "react";
 
 const queryClient = new QueryClient();
@@ -114,6 +114,18 @@ function SignInPanel({ isSupabaseConfigured }: { isSupabaseConfigured: boolean }
 }
 
 function Router() {
+  const [location] = useLocation();
+
+  useEffect(() => {
+    if (window.location.hash) {
+      window.requestAnimationFrame(() => {
+        document.querySelector(window.location.hash)?.scrollIntoView({ behavior: "smooth" });
+      });
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [location]);
+
   return (
     <Switch>
       <Route path="/" component={Home} />
