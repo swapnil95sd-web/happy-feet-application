@@ -13,6 +13,7 @@ import {
   DEFAULT_HOMEPAGE,
   deactivateClass,
   deactivateInstructor,
+  ensureImageBuckets,
   runClassSaveDiagnostic,
   saveAnnouncement,
   saveClass,
@@ -82,6 +83,12 @@ export default function Admin() {
   const galleryQuery = useGalleryImages();
   const stats = useAdminStats(classesQuery.data, bookingsQuery.data, announcementsQuery.data);
 
+  useEffect(() => {
+    void ensureImageBuckets().catch(() => {
+      // Best-effort repair for existing uploaded images.
+    });
+  }, []);
+
   const refreshAll = () => {
     classesQuery.refetch();
     homepageQuery.refetch();
@@ -143,6 +150,9 @@ function Overview({ stats, bookings, classes }: { stats: ReturnType<typeof useAd
     ["Pending payments", stats.pendingPayments],
     ["Announcements", stats.announcements],
   ];
+  const pendingBookings = bookings.filter((b) => b.paymentStatus === "pending");
+  const almostFullClasses = classes.filter((c) => c.spotsAvailable <= 3 && c.status !== "inactive");
+  const needsAttentionCount = pendingBookings.length + almostFullClasses.length;
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -158,19 +168,24 @@ function Overview({ stats, bookings, classes }: { stats: ReturnType<typeof useAd
       <Card>
         <CardHeader><CardTitle className="text-base text-secondary">Needs Attention</CardTitle></CardHeader>
         <CardContent className="space-y-3 text-sm">
-          {bookings.filter((b) => b.paymentStatus === "pending").slice(0, 5).map((b) => (
+          {pendingBookings.slice(0, 5).map((b) => (
             <div key={b.id} className="flex items-center justify-between rounded-xl border p-3">
               <span>{b.studentName} - {b.className ?? "Class"}</span>
               <Badge variant="outline">payment pending</Badge>
             </div>
           ))}
-          {classes.filter((c) => c.spotsAvailable <= 3 && c.status !== "inactive").slice(0, 5).map((c) => (
+          {almostFullClasses.slice(0, 5).map((c) => (
             <div key={c.id} className="flex items-center justify-between rounded-xl border p-3">
               <span>{c.name}</span>
               <Badge className="bg-yellow-100 text-yellow-800">{c.spotsAvailable} spots left</Badge>
             </div>
           ))}
           {!bookings.length && !classes.length && <p className="text-muted-foreground">Connect Supabase to see live operations here.</p>}
+          {(bookings.length > 0 || classes.length > 0) && needsAttentionCount === 0 && (
+            <p className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-800">
+              All caught up. No pending payments or nearly full classes right now.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -654,13 +669,24 @@ function BookingsManager({ bookings, onSaved }: { bookings: Booking[]; onSaved: 
   const saveAndEmailStudent = async (booking: Booking) => {
     const draft = drafts[booking.id];
     if (!draft) return;
+    let bookingUpdated = false;
     try {
       await updateBookingWorkflow(booking.id, draft);
-      await notifyBookingStatus(booking, draft);
-      toast({ title: "Booking updated and student emailed." });
+      bookingUpdated = true;
       onSaved();
+      const emailResult = await notifyBookingStatus(booking, draft);
+      toast({
+        title: emailResult.warning ? "Booking updated. Email skipped." : "Booking updated and student emailed.",
+        description: emailResult.warning,
+        variant: emailResult.warning ? "destructive" : "default",
+      });
     } catch (error) {
-      toast({ title: "Could not email student", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+      if (bookingUpdated) onSaved();
+      toast({
+        title: bookingUpdated ? "Booking updated, but email failed" : "Could not update booking",
+        description: error instanceof Error ? error.message : undefined,
+        variant: "destructive",
+      });
     }
   };
   const exportBookings = () => {
@@ -757,7 +783,7 @@ function BookingsManager({ bookings, onSaved }: { bookings: Booking[]; onSaved: 
 async function notifyBookingStatus(
   booking: Booking,
   draft: Pick<Booking, "paymentStatus" | "status" | "notes">,
-) {
+): Promise<{ warning?: string }> {
   const response = await fetch("/api/notify-booking", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -777,6 +803,8 @@ async function notifyBookingStatus(
     const body = await response.json().catch(() => null);
     throw new Error(body?.error || "Email could not be sent.");
   }
+  const body = await response.json().catch(() => null);
+  return { warning: typeof body?.warning === "string" ? body.warning : undefined };
 }
 
 function AnnouncementsManager({ announcements, onSaved }: { announcements: Announcement[]; onSaved: () => void }) {

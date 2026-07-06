@@ -36,6 +36,15 @@ async function sendEmail(apiKey, email) {
   return body;
 }
 
+function isResendDomainVerificationError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    message.includes("verify a domain") ||
+    message.includes("resend.com/domains") ||
+    message.includes("only send testing emails")
+  );
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -97,6 +106,8 @@ module.exports = async function handler(req, res) {
     <p>The studio will follow up directly if anything else is needed.</p>
   `;
 
+  const warnings = [];
+
   try {
     if (notificationType === "new-booking") {
       await sendEmail(apiKey, {
@@ -106,7 +117,14 @@ module.exports = async function handler(req, res) {
         html: adminHtml,
       });
     }
+  } catch (error) {
+    return res.status(502).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Could not send admin email",
+    });
+  }
 
+  try {
     if (studentEmail.includes("@")) {
       await sendEmail(apiKey, {
         from: fromEmail,
@@ -117,8 +135,20 @@ module.exports = async function handler(req, res) {
         html: notificationType === "booking-status" ? statusHtml : studentHtml,
       });
     }
+  } catch (error) {
+    if (!isResendDomainVerificationError(error)) {
+      return res.status(502).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Could not send student email",
+      });
+    }
+    warnings.push(
+      "Student email was skipped because Resend needs a verified sending domain before emailing customers.",
+    );
+  }
 
-    return res.status(200).json({ ok: true });
+  try {
+    return res.status(200).json({ ok: true, warning: warnings[0] });
   } catch (error) {
     return res.status(502).json({
       ok: false,

@@ -53,6 +53,36 @@ async function supabaseFetch(path, options = {}) {
   return text ? JSON.parse(text) : null;
 }
 
+async function storageFetch(path, options = {}) {
+  const supabaseUrl = getSupabaseUrl();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) throw new Error("Image storage is not configured in Vercel.");
+
+  const response = await fetch(`${supabaseUrl}${path}`, {
+    ...options,
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    let message = text;
+    try {
+      const parsed = JSON.parse(text);
+      message = parsed.message || parsed.error || parsed.details || text;
+    } catch {
+      // Keep raw text.
+    }
+    const error = new Error(message || `Supabase storage request failed with ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
+  return text ? JSON.parse(text) : null;
+}
+
 async function getUserFromToken(token) {
   const supabaseUrl = getSupabaseUrl();
   const anonKey = getSupabaseAnonKey();
@@ -101,11 +131,44 @@ function safeFileName(name) {
   return `${base}.${extension}`;
 }
 
+const IMAGE_BUCKETS = ["class-images", "site-images", "gallery", "instructor-images"];
+const IMAGE_BUCKET_CONFIG = {
+  public: true,
+  file_size_limit: 8 * 1024 * 1024,
+  allowed_mime_types: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+};
+
+async function ensurePublicBucket(bucket) {
+  if (!IMAGE_BUCKETS.includes(bucket)) throw new Error("Unsupported image bucket.");
+  try {
+    const existing = await storageFetch(`/storage/v1/bucket/${encodeURIComponent(bucket)}`, { method: "GET" });
+    if (existing?.public !== true) {
+      await storageFetch(`/storage/v1/bucket/${encodeURIComponent(bucket)}`, {
+        method: "PUT",
+        body: JSON.stringify(IMAGE_BUCKET_CONFIG),
+      });
+    }
+  } catch (error) {
+    if (error?.status !== 404) throw error;
+    await storageFetch("/storage/v1/bucket", {
+      method: "POST",
+      body: JSON.stringify({
+        id: bucket,
+        name: bucket,
+        ...IMAGE_BUCKET_CONFIG,
+      }),
+    });
+  }
+}
+
+async function ensureImageBuckets() {
+  await Promise.all(IMAGE_BUCKETS.map((bucket) => ensurePublicBucket(bucket)));
+  return { buckets: IMAGE_BUCKETS };
+}
+
 async function uploadImage(payload) {
   const bucket = String(payload.bucket || "");
-  if (!["class-images", "site-images", "gallery", "instructor-images"].includes(bucket)) {
-    throw new Error("Unsupported image bucket.");
-  }
+  if (!IMAGE_BUCKETS.includes(bucket)) throw new Error("Unsupported image bucket.");
   const dataUrl = String(payload.dataUrl || "");
   const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
   if (!match) throw new Error("Image upload payload was invalid.");
@@ -118,6 +181,8 @@ async function uploadImage(payload) {
   const supabaseUrl = getSupabaseUrl();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceRoleKey) throw new Error("Image uploads are not configured in Vercel.");
+
+  await ensurePublicBucket(bucket);
 
   const response = await fetch(`${supabaseUrl}/storage/v1/object/${bucket}/${path}`, {
     method: "POST",
@@ -221,6 +286,8 @@ async function handleAction(action, payload) {
   switch (action) {
     case "diagnostic":
       return { checks: await runDiagnostic() };
+    case "ensureImageBuckets":
+      return ensureImageBuckets();
     case "uploadImage":
       return uploadImage(payload);
     case "saveClass":

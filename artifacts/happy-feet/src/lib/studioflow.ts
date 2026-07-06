@@ -578,6 +578,10 @@ export async function uploadStudioImage(bucket: "class-images" | "gallery" | "si
   return result.imageUrl;
 }
 
+export async function ensureImageBuckets() {
+  await adminWrite("ensureImageBuckets", {});
+}
+
 export async function saveClass(input: Partial<DanceClass>) {
   await adminWrite("saveClass", input);
 }
