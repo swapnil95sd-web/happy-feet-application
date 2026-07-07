@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import type { CSSProperties } from "react";
 import { LayoutDashboard, Menu, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,12 +70,25 @@ export function Navigation() {
     .toUpperCase() || "DS";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header
+      className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      style={{
+        "--primary": studio.primaryColor,
+        "--secondary": studio.secondaryColor,
+      } as CSSProperties}
+    >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <button onClick={goHomeTop} className="flex items-center gap-3 text-left">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-serif font-bold text-lg shadow-sm">
-            {studioInitials}
-          </div>
+          {studio.logoUrl ? (
+            <img src={studio.logoUrl} alt={`${studioName} logo`} className="h-10 w-10 rounded-full object-cover shadow-sm" />
+          ) : (
+            <div
+              className="h-10 w-10 rounded-full flex items-center justify-center text-white font-serif font-bold text-lg shadow-sm"
+              style={{ background: `linear-gradient(135deg, ${studio.primaryColor}, ${studio.secondaryColor})` }}
+            >
+              {studioInitials}
+            </div>
+          )}
           <div className="flex flex-col">
             <span className="font-serif font-bold text-lg leading-tight text-foreground">{studioName}</span>
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Dance boldly. Feel at home.</span>

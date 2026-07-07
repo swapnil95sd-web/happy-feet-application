@@ -692,6 +692,11 @@ export async function saveHomepageContent(content: HomepageContent) {
   await adminWrite("saveHomepage", content);
 }
 
+export async function saveStudioSettings(studio: Partial<Studio>) {
+  await adminWrite("saveStudioSettings", studio);
+  activeStudioPromise = null;
+}
+
 export async function uploadStudioImage(bucket: "class-images" | "gallery" | "site-images" | "instructor-images", file: File) {
   const dataUrl = await fileToDataUrl(file);
   const result = await adminWrite<{ imageUrl?: string }>("uploadImage", {

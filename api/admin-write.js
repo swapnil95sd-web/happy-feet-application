@@ -144,6 +144,23 @@ function withStudioId(payload, studio) {
   return studio?.id ? { ...payload, studioId: studio.id, studio_id: studio.id } : payload;
 }
 
+function studioPayload(input) {
+  return clean({
+    slug: input.slug,
+    name: input.name,
+    status: ["active", "inactive", "trial"].includes(input.status) ? input.status : "active",
+    primary_color: input.primaryColor || input.primary_color,
+    secondary_color: input.secondaryColor || input.secondary_color,
+    logo_url: input.logoUrl || input.logo_url || null,
+    contact_email: input.contactEmail || input.contact_email || null,
+    contact_phone: input.contactPhone || input.contact_phone || null,
+    payment_label: input.paymentLabel || input.payment_label || null,
+    payment_handle: input.paymentHandle || input.payment_handle || null,
+    custom_domain: input.customDomain || input.custom_domain || null,
+    updated_at: new Date().toISOString(),
+  });
+}
+
 function clean(payload) {
   return Object.fromEntries(
     Object.entries(payload).filter(([, value]) => value !== undefined && value !== ""),
@@ -365,6 +382,16 @@ async function handleAction(action, payload, studio) {
       return ensureImageBuckets();
     case "autoDeactivatePastClasses":
       return autoDeactivatePastClasses(studio);
+    case "saveStudioSettings": {
+      if (!studio?.id) {
+        throw new Error("Studio settings need the multi-studio migration. Run docs/StudioFlow_Multi_Studio_Migration.sql first.");
+      }
+      await supabaseFetch(`/rest/v1/studios?id=eq.${encodeURIComponent(studio.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify(studioPayload(scopedPayload)),
+      });
+      return {};
+    }
     case "uploadImage":
       return uploadImage(payload);
     case "saveClass":

@@ -22,6 +22,7 @@ import {
   saveHomepageContent,
   saveInstructor,
   savePracticeVideo,
+  saveStudioSettings,
   updateBookingWorkflow,
   uploadStudioImage,
   type Announcement,
@@ -31,6 +32,7 @@ import {
   type HomepageContent,
   type Instructor,
   type PracticeVideo,
+  type Studio,
   useAdminStats,
   useActiveStudio,
   useAnnouncements,
@@ -44,6 +46,7 @@ import {
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
+  { id: "studio", label: "Studio Settings", icon: Settings },
   { id: "content", label: "Homepage", icon: Settings },
   { id: "instructors", label: "Instructors", icon: Users },
   { id: "classes", label: "Classes", icon: BookOpen },
@@ -107,6 +110,7 @@ export default function Admin() {
     videosQuery.refetch();
     bookingsQuery.refetch();
     galleryQuery.refetch();
+    studioQuery.refetch();
   };
 
   return (
@@ -140,6 +144,7 @@ export default function Admin() {
 
           <main className="min-w-0 space-y-6">
             {activeTab === "overview" && <Overview stats={stats} bookings={bookingsQuery.data} classes={classesQuery.data} />}
+            {activeTab === "studio" && <StudioSettingsEditor initial={studioQuery.data} onSaved={refreshAll} />}
             {activeTab === "content" && <HomepageEditor initial={homepageQuery.data} onSaved={refreshAll} />}
             {activeTab === "instructors" && <InstructorsManager instructors={instructorsQuery.data} classes={classesQuery.data} bookings={bookingsQuery.data} onSaved={refreshAll} />}
             {activeTab === "classes" && <ClassManager classes={classesQuery.data} instructors={instructorsQuery.data} bookings={bookingsQuery.data} onSaved={refreshAll} />}
@@ -201,6 +206,140 @@ function Overview({ stats, bookings, classes }: { stats: ReturnType<typeof useAd
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function StudioSettingsEditor({ initial, onSaved }: { initial: Studio; onSaved: () => void }) {
+  const [form, setForm] = useState<Studio>(initial);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => setForm(initial), [initial]);
+
+  const save = async () => {
+    try {
+      await saveStudioSettings(form);
+      toast({ title: "Studio settings saved." });
+      onSaved();
+    } catch (error) {
+      toast({
+        title: "Could not save studio settings",
+        description: error instanceof Error ? error.message : undefined,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const uploadLogo = async (file: File | null) => {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const logoUrl = await uploadStudioImage("site-images", file);
+      setForm({ ...form, logoUrl });
+      toast({ title: "Studio logo uploaded." });
+    } catch (error) {
+      toast({ title: "Could not upload logo", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base text-secondary">Studio Settings</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {!form.id && (
+          <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
+            Studio settings are using the Happy Feet default until the multi-studio migration is run in Supabase.
+          </div>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Studio name">
+            <Input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+          </Field>
+          <Field label="Studio slug">
+            <Input value={form.slug} disabled className="bg-muted" />
+          </Field>
+          <Field label="Status">
+            <Select value={form.status} onValueChange={(value) => setForm({ ...form, status: value })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">active</SelectItem>
+                <SelectItem value="trial">trial</SelectItem>
+                <SelectItem value="inactive">inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Logo">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                {form.logoUrl ? (
+                  <img src={form.logoUrl} alt={`${form.name} logo`} className="h-14 w-14 rounded-xl object-cover" />
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-secondary font-serif font-bold text-white">
+                    {form.name.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-secondary/90">
+                  <Upload className="h-4 w-4" />
+                  {isUploading ? "Uploading..." : "Upload logo"}
+                  <input type="file" accept="image/*" className="sr-only" onChange={(event) => uploadLogo(event.target.files?.[0] ?? null)} />
+                </label>
+              </div>
+              <Input value={form.logoUrl ?? ""} placeholder="Optional logo URL" onChange={(event) => setForm({ ...form, logoUrl: event.target.value })} />
+            </div>
+          </Field>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Primary color">
+            <div className="flex gap-2">
+              <Input type="color" value={form.primaryColor} onChange={(event) => setForm({ ...form, primaryColor: event.target.value })} className="h-10 w-16 p-1" />
+              <Input value={form.primaryColor} onChange={(event) => setForm({ ...form, primaryColor: event.target.value })} />
+            </div>
+          </Field>
+          <Field label="Secondary color">
+            <div className="flex gap-2">
+              <Input type="color" value={form.secondaryColor} onChange={(event) => setForm({ ...form, secondaryColor: event.target.value })} className="h-10 w-16 p-1" />
+              <Input value={form.secondaryColor} onChange={(event) => setForm({ ...form, secondaryColor: event.target.value })} />
+            </div>
+          </Field>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Contact email">
+            <Input value={form.contactEmail} onChange={(event) => setForm({ ...form, contactEmail: event.target.value })} />
+          </Field>
+          <Field label="Contact phone">
+            <Input value={form.contactPhone} onChange={(event) => setForm({ ...form, contactPhone: event.target.value })} />
+          </Field>
+          <Field label="Payment label">
+            <Input value={form.paymentLabel} placeholder="Venmo, Zelle, CashApp" onChange={(event) => setForm({ ...form, paymentLabel: event.target.value })} />
+          </Field>
+          <Field label="Payment handle">
+            <Input value={form.paymentHandle} placeholder="@StudioName" onChange={(event) => setForm({ ...form, paymentHandle: event.target.value })} />
+          </Field>
+        </div>
+
+        <div className="rounded-2xl border p-4">
+          <p className="mb-3 text-sm font-semibold text-secondary">Brand preview</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="h-12 w-12 rounded-full" style={{ background: `linear-gradient(135deg, ${form.primaryColor}, ${form.secondaryColor})` }} />
+            <div>
+              <p className="font-serif text-xl font-bold" style={{ color: form.secondaryColor }}>{form.name}</p>
+              <p className="text-sm text-muted-foreground">{form.contactEmail} - {form.paymentLabel} {form.paymentHandle}</p>
+            </div>
+          </div>
+        </div>
+
+        <Button onClick={save} disabled={!form.id}>
+          Save Studio Settings
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
