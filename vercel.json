@@ -2,5 +2,15 @@
   "buildCommand": "pnpm --filter @workspace/happy-feet run build",
   "outputDirectory": "artifacts/happy-feet/dist/public",
   "installCommand": "pnpm install",
-  "framework": null
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
