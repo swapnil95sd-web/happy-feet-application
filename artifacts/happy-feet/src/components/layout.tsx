@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import type { CSSProperties } from "react";
-import { LayoutDashboard, Menu, LogOut, User } from "lucide-react";
+import { Building2, LayoutDashboard, Menu, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -126,6 +126,9 @@ export function Navigation() {
                   <LayoutDashboard className="h-4 w-4" />
                   Dashboard
                 </Link>
+                <Link href="/platform" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+                  Platform
+                </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
@@ -209,6 +212,13 @@ export function Navigation() {
                     >
                       <LayoutDashboard className="h-4 w-4" />
                       Admin dashboard
+                    </Link>
+                    <Link
+                      href="/platform"
+                      className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Building2 className="h-4 w-4" />
+                      Platform admin
                     </Link>
                     <button
                       onClick={logout}

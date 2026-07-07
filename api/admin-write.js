@@ -161,6 +161,143 @@ function studioPayload(input) {
   });
 }
 
+function makeSlug(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 64);
+}
+
+function starterHomepage(studio) {
+  const studioName = studio.name || "Your Dance Studio";
+  const paymentHandle = studio.payment_handle || "";
+  return {
+    heroHeadline: `Dance boldly with ${studioName}.`,
+    heroSubheadline: "Classes, workshops, and performance programs for dancers ready to grow with confidence.",
+    ctaText: "Book a Class",
+    announcementBanner: "New classes are opening soon.",
+    contactEmail: studio.contact_email || "",
+    contactPhone: studio.contact_phone || "",
+    venmoHandle: paymentHandle,
+    heroImageUrl: "",
+    instructorImageUrl: "",
+    aboutStory: `${studioName} is built around movement, confidence, community, and the joy of helping every dancer feel at home.`,
+    instagramUrls: [],
+    sentiments: [],
+  };
+}
+
+async function assertPlatformAdmin(user) {
+  const rows = await supabaseFetch(
+    `/rest/v1/profiles?select=id,email,role&or=(id.eq.${encodeURIComponent(user.id)},email.eq.${encodeURIComponent(user.email || "")})`,
+    { method: "GET", headers: { Prefer: "return=representation" } },
+  );
+  const profile = Array.isArray(rows)
+    ? rows.find((row) => row.id === user.id) || rows.find((row) => row.email?.toLowerCase?.() === user.email?.toLowerCase?.()) || null
+    : null;
+  const bootstrapEmail = process.env.VITE_ADMIN_EMAIL;
+  const isBootstrapAdmin =
+    bootstrapEmail && user.email && bootstrapEmail.toLowerCase() === user.email.toLowerCase();
+  if (profile?.role === "admin" || isBootstrapAdmin) return;
+  throw new Error("Platform admin access requires a global StudioFlow admin profile.");
+}
+
+async function listPlatformStudios() {
+  const studios = await supabaseFetch("/rest/v1/studios?select=*&order=created_at.desc", {
+    method: "GET",
+    headers: { Prefer: "return=representation" },
+  });
+  const members = await supabaseFetch("/rest/v1/studio_members?select=studio_id,email,role,status", {
+    method: "GET",
+    headers: { Prefer: "return=representation" },
+  });
+  const classes = await supabaseFetch("/rest/v1/classes?select=studio_id,status", {
+    method: "GET",
+    headers: { Prefer: "return=representation" },
+  });
+  const bookings = await supabaseFetch("/rest/v1/bookings?select=studio_id,payment_status", {
+    method: "GET",
+    headers: { Prefer: "return=representation" },
+  });
+
+  return {
+    studios: (Array.isArray(studios) ? studios : []).map((studio) => {
+      const studioMembers = (Array.isArray(members) ? members : []).filter((member) => member.studio_id === studio.id);
+      const studioClasses = (Array.isArray(classes) ? classes : []).filter((item) => item.studio_id === studio.id);
+      const studioBookings = (Array.isArray(bookings) ? bookings : []).filter((item) => item.studio_id === studio.id);
+      return {
+        id: studio.id,
+        slug: studio.slug,
+        name: studio.name,
+        status: studio.status,
+        contactEmail: studio.contact_email,
+        contactPhone: studio.contact_phone,
+        paymentHandle: studio.payment_handle,
+        classCount: studioClasses.length,
+        bookingCount: studioBookings.length,
+        pendingPaymentCount: studioBookings.filter((booking) => booking.payment_status === "pending").length,
+        owners: studioMembers.filter((member) => ["owner", "admin"].includes(member.role)).map((member) => member.email),
+      };
+    }),
+  };
+}
+
+async function createPlatformStudio(input) {
+  const slug = makeSlug(input.slug || input.name);
+  if (!slug) throw new Error("Studio slug is required.");
+  const ownerEmail = String(input.ownerEmail || "").trim().toLowerCase();
+  if (!ownerEmail.includes("@")) throw new Error("Owner email is required.");
+
+  const payload = clean({
+    slug,
+    name: input.name,
+    status: "trial",
+    primary_color: input.primaryColor || "#c0185a",
+    secondary_color: input.secondaryColor || "#3a1f3a",
+    contact_email: input.contactEmail || ownerEmail,
+    contact_phone: input.contactPhone || null,
+    payment_label: input.paymentLabel || "Venmo",
+    payment_handle: input.paymentHandle || null,
+  });
+
+  await supabaseFetch("/rest/v1/studios?on_conflict=slug", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify(payload),
+  });
+  const rows = await supabaseFetch(`/rest/v1/studios?select=*&slug=eq.${encodeURIComponent(slug)}&limit=1`, {
+    method: "GET",
+    headers: { Prefer: "return=representation" },
+  });
+  const studio = Array.isArray(rows) ? rows[0] : null;
+  if (!studio?.id) throw new Error("Studio was created but could not be loaded.");
+
+  await supabaseFetch("/rest/v1/studio_members?on_conflict=studio_id,email", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      studio_id: studio.id,
+      email: ownerEmail,
+      role: "owner",
+      status: "active",
+    }),
+  });
+
+  await supabaseFetch("/rest/v1/site_content?on_conflict=studio_id,key", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      studio_id: studio.id,
+      key: "homepage",
+      value: starterHomepage(studio),
+      updated_at: new Date().toISOString(),
+    }),
+  });
+
+  return { studio };
+}
+
 function clean(payload) {
   return Object.fromEntries(
     Object.entries(payload).filter(([, value]) => value !== undefined && value !== ""),
@@ -376,6 +513,10 @@ async function runDiagnostic(studio) {
 async function handleAction(action, payload, studio) {
   const scopedPayload = withStudioId(payload, studio);
   switch (action) {
+    case "listPlatformStudios":
+      return listPlatformStudios();
+    case "createPlatformStudio":
+      return createPlatformStudio(payload);
     case "diagnostic":
       return { checks: await runDiagnostic(studio) };
     case "ensureImageBuckets":
@@ -499,6 +640,11 @@ module.exports = async function handler(req, res) {
     const user = await getUserFromToken(token);
     const body = parseBody(req);
     const studio = await resolveStudio(body.studioSlug);
+    if (["listPlatformStudios", "createPlatformStudio"].includes(body.action)) {
+      await assertPlatformAdmin(user);
+      const result = await handleAction(body.action, body.payload || {}, studio);
+      return res.status(200).json({ ok: true, ...result });
+    }
     await assertAdmin(user, studio);
     const result = await handleAction(body.action, body.payload || {}, studio);
     return res.status(200).json({ ok: true, ...result });

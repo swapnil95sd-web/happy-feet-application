@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { BookOpen, CalendarDays, Download, Image, LayoutDashboard, Megaphone, Plus, Settings, Upload, Users, Video } from "lucide-react";
+import { BookOpen, Building2, CalendarDays, Download, Image, LayoutDashboard, Megaphone, Plus, Settings, Upload, Users, Video } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -116,12 +116,18 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-background">
       <section className="px-4 py-10" style={{ background: "radial-gradient(circle at 20% 0, rgba(58,31,58,.08), transparent 40%)" }}>
-        <div className="container mx-auto max-w-6xl">
-          <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-primary">StudioFlow Admin</p>
-          <h1 className="font-serif text-4xl font-bold text-secondary">StudioFlow Command Center</h1>
-          <p className="mt-1 text-muted-foreground">
-            Managing {studioQuery.data.name}. Update public content, classes, bookings, announcements, videos, and images.
-          </p>
+        <div className="container mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-primary">StudioFlow Admin</p>
+            <h1 className="font-serif text-4xl font-bold text-secondary">StudioFlow Command Center</h1>
+            <p className="mt-1 text-muted-foreground">
+              Managing {studioQuery.data.name}. Update public content, classes, bookings, announcements, videos, and images.
+            </p>
+          </div>
+          <a href="/platform" className="inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold text-secondary transition-colors hover:bg-card">
+            <Building2 className="h-4 w-4" />
+            Platform Admin
+          </a>
         </div>
       </section>
 

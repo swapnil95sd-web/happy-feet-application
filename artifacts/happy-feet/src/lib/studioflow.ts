@@ -109,6 +109,32 @@ export type GalleryImage = {
   status: string;
 };
 
+export type PlatformStudio = {
+  id: string;
+  slug: string;
+  name: string;
+  status: string;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  paymentHandle: string | null;
+  classCount: number;
+  bookingCount: number;
+  pendingPaymentCount: number;
+  owners: string[];
+};
+
+export type CreateStudioInput = {
+  name: string;
+  slug: string;
+  ownerEmail: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  paymentLabel?: string;
+  paymentHandle?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+};
+
 export const DEFAULT_STUDIO: Studio = {
   id: null,
   slug: import.meta.env.VITE_STUDIO_SLUG || "happy-feet",
@@ -793,6 +819,15 @@ export async function updateBookingWorkflow(
 
 export async function saveGalleryImage(input: Partial<GalleryImage>) {
   await adminWrite("saveGalleryImage", input);
+}
+
+export async function listPlatformStudios() {
+  const result = await adminWrite<{ studios?: PlatformStudio[] }>("listPlatformStudios", {});
+  return result.studios ?? [];
+}
+
+export async function createPlatformStudio(input: CreateStudioInput) {
+  await adminWrite("createPlatformStudio", input);
 }
 
 function fileToDataUrl(file: File) {

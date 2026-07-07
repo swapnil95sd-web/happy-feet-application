@@ -7,6 +7,7 @@ import { Navigation } from "@/components/layout";
 import Home from "@/pages/home";
 import About from "@/pages/about";
 import Admin from "@/pages/admin";
+import PlatformAdmin from "@/pages/platform";
 import { AuthProvider, type StudioRole, useAuth } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import type { ComponentType, FormEvent } from "react";
@@ -138,6 +139,9 @@ function Router() {
       </Route>
       <Route path="/admin">
         <ProtectedRoute component={Admin} roles={["admin"]} />
+      </Route>
+      <Route path="/platform">
+        <ProtectedRoute component={PlatformAdmin} roles={["admin"]} />
       </Route>
       <Route component={NotFound} />
     </Switch>
