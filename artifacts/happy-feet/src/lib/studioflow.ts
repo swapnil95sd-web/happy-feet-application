@@ -582,6 +582,10 @@ export async function ensureImageBuckets() {
   await adminWrite("ensureImageBuckets", {});
 }
 
+export async function autoDeactivatePastClasses() {
+  await adminWrite("autoDeactivatePastClasses", {});
+}
+
 export async function saveClass(input: Partial<DanceClass>) {
   await adminWrite("saveClass", input);
 }

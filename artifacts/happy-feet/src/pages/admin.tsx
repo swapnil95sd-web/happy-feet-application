@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   DEFAULT_HOMEPAGE,
+  autoDeactivatePastClasses,
   deactivateClass,
   deactivateInstructor,
   ensureImageBuckets,
@@ -87,6 +88,13 @@ export default function Admin() {
     void ensureImageBuckets().catch(() => {
       // Best-effort repair for existing uploaded images.
     });
+    void autoDeactivatePastClasses()
+      .then(() => {
+        classesQuery.refetch();
+      })
+      .catch(() => {
+        // Best-effort cleanup; classes with text-only weekdays stay active.
+      });
   }, []);
 
   const refreshAll = () => {
@@ -130,7 +138,7 @@ export default function Admin() {
             {activeTab === "overview" && <Overview stats={stats} bookings={bookingsQuery.data} classes={classesQuery.data} />}
             {activeTab === "content" && <HomepageEditor initial={homepageQuery.data} onSaved={refreshAll} />}
             {activeTab === "instructors" && <InstructorsManager instructors={instructorsQuery.data} classes={classesQuery.data} bookings={bookingsQuery.data} onSaved={refreshAll} />}
-            {activeTab === "classes" && <ClassManager classes={classesQuery.data} instructors={instructorsQuery.data} onSaved={refreshAll} />}
+            {activeTab === "classes" && <ClassManager classes={classesQuery.data} instructors={instructorsQuery.data} bookings={bookingsQuery.data} onSaved={refreshAll} />}
             {activeTab === "bookings" && <BookingsManager bookings={bookingsQuery.data} onSaved={refreshAll} />}
             {activeTab === "announcements" && <AnnouncementsManager announcements={announcementsQuery.data} onSaved={refreshAll} />}
             {activeTab === "videos" && <VideosManager videos={videosQuery.data} classes={classesQuery.data} onSaved={refreshAll} />}
@@ -465,12 +473,33 @@ function InstructorsManager({
   );
 }
 
-function ClassManager({ classes, instructors, onSaved }: { classes: DanceClass[]; instructors: Instructor[]; onSaved: () => void }) {
+function ClassManager({
+  classes,
+  instructors,
+  bookings,
+  onSaved,
+}: {
+  classes: DanceClass[];
+  instructors: Instructor[];
+  bookings: Booking[];
+  onSaved: () => void;
+}) {
   const [form, setForm] = useState<Partial<DanceClass>>(EMPTY_CLASS);
   const [isUploading, setIsUploading] = useState(false);
   const [diagnostic, setDiagnostic] = useState<string>("");
+  const [savingPaymentId, setSavingPaymentId] = useState<string | null>(null);
   const { toast } = useToast();
-  const edit = (danceClass: DanceClass) => setForm(danceClass);
+  const bookingsByClass = useMemo(() => {
+    return bookings.reduce<Record<string, Booking[]>>((groups, booking) => {
+      groups[booking.classId] = [...(groups[booking.classId] ?? []), booking];
+      return groups;
+    }, {});
+  }, [bookings]);
+
+  const edit = (danceClass: DanceClass) => {
+    setForm(danceClass);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const save = async () => {
     try {
       await saveClass(form);
@@ -488,6 +517,22 @@ function ClassManager({ classes, instructors, onSaved }: { classes: DanceClass[]
       onSaved();
     } catch (error) {
       toast({ title: "Could not deactivate class", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    }
+  };
+  const updateRosterPayment = async (booking: Booking, paymentStatus: Booking["paymentStatus"]) => {
+    setSavingPaymentId(booking.id);
+    try {
+      await updateBookingWorkflow(booking.id, {
+        paymentStatus,
+        status: booking.status,
+        notes: booking.notes ?? "",
+      });
+      toast({ title: "Payment status updated." });
+      onSaved();
+    } catch (error) {
+      toast({ title: "Could not update payment", description: error instanceof Error ? error.message : undefined, variant: "destructive" });
+    } finally {
+      setSavingPaymentId(null);
     }
   };
   const uploadClassImage = async (file: File | null) => {
@@ -517,23 +562,44 @@ function ClassManager({ classes, instructors, onSaved }: { classes: DanceClass[]
     }
   };
   const exportClasses = () => {
-    downloadCsv(
-      "classes.csv",
-      classes.map((c) => ({
-        title: c.name,
+    const rows = classes.flatMap((c) => {
+      const classBookings = bookingsByClass[c.id] ?? [];
+      const enrolledCount = classBookings.filter((booking) => booking.status !== "cancelled").length;
+      const classFields = {
+        class_title: c.name,
         style: c.style,
+        instructor: c.instructor,
         location: c.location,
-        schedule_day: c.scheduleDay,
+        schedule_day_or_date: c.scheduleDay,
         schedule_time: c.scheduleTime,
         price: c.price,
         price_label: c.pricePeriod,
         age_group: c.ageGroup,
         level: c.category,
         capacity: c.capacity,
-        status: c.status,
+        enrolled_students: enrolledCount,
+        available_spots: Math.max(c.capacity - enrolledCount, 0),
+        class_status: c.status,
         featured: c.featured ? "yes" : "no",
         image_url: c.imageUrl ?? "",
-      })),
+      };
+      if (!classBookings.length) {
+        return [{ ...classFields, student_name: "", student_email: "", student_phone: "", booking_status: "", payment_status: "", notes: "", registered_at: "" }];
+      }
+      return classBookings.map((booking) => ({
+        ...classFields,
+        student_name: booking.studentName,
+        student_email: booking.email,
+        student_phone: booking.phone,
+        booking_status: booking.status,
+        payment_status: booking.paymentStatus,
+        notes: booking.notes,
+        registered_at: booking.createdAt,
+      }));
+    });
+    downloadCsv(
+      "classes-and-students.csv",
+      rows,
     );
   };
 
@@ -545,7 +611,7 @@ function ClassManager({ classes, instructors, onSaved }: { classes: DanceClass[]
           <Field label="Title"><Input value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
           <Field label="Style"><Input value={form.style ?? ""} onChange={(e) => setForm({ ...form, style: e.target.value })} /></Field>
           <Field label="Location"><Input value={form.location ?? ""} onChange={(e) => setForm({ ...form, location: e.target.value })} /></Field>
-          <Field label="Schedule day"><Input value={form.scheduleDay ?? ""} onChange={(e) => setForm({ ...form, scheduleDay: e.target.value })} /></Field>
+          <Field label="Schedule day/date"><Input value={form.scheduleDay ?? ""} placeholder="Monday or 2026-07-20" onChange={(e) => setForm({ ...form, scheduleDay: e.target.value })} /></Field>
           <Field label="Schedule time"><Input value={form.scheduleTime ?? ""} onChange={(e) => setForm({ ...form, scheduleTime: e.target.value })} /></Field>
           <Field label="Price"><Input type="number" value={form.price ?? 0} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} /></Field>
           <Field label="Age group"><Input value={form.ageGroup ?? ""} onChange={(e) => setForm({ ...form, ageGroup: e.target.value })} /></Field>
@@ -587,6 +653,9 @@ function ClassManager({ classes, instructors, onSaved }: { classes: DanceClass[]
             </div>
           </Field>
           <Field label="Description"><Textarea value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
+          <p className="text-xs text-muted-foreground sm:col-span-2">
+            Auto-deactivate works when Schedule day/date contains a real date, for example 2026-07-20. Weekly text like Monday stays active until you deactivate it.
+          </p>
           <div className="flex gap-2 sm:col-span-2">
             <Button onClick={save}>Save Class</Button>
             <Button variant="outline" onClick={() => setForm(EMPTY_CLASS)}>Clear</Button>
@@ -610,12 +679,72 @@ function ClassManager({ classes, instructors, onSaved }: { classes: DanceClass[]
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {classes.map((c) => (
-            <div key={c.id} className="flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between">
-              <div><p className="font-semibold text-secondary">{c.name}</p><p className="text-sm text-muted-foreground">{c.scheduleDay} {c.scheduleTime} - {c.location}</p></div>
-              <div className="flex gap-2"><Button variant="outline" onClick={() => edit(c)}>Edit</Button><Button variant="outline" onClick={() => archive(c.id)}>Deactivate</Button></div>
+          {classes.map((c) => {
+            const classBookings = bookingsByClass[c.id] ?? [];
+            const enrolledCount = classBookings.filter((booking) => booking.status !== "cancelled").length;
+            const availableSpots = Math.max(c.capacity - enrolledCount, 0);
+            return (
+            <div key={c.id} className="rounded-xl border p-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-secondary">{c.name}</p>
+                    <Badge variant={c.status === "active" ? "default" : "outline"}>{c.status}</Badge>
+                    <Badge variant="outline">{enrolledCount} enrolled</Badge>
+                    <Badge variant="outline">{availableSpots} open</Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {c.scheduleDay} {c.scheduleTime} - {c.location}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {c.instructor} - {c.ageGroup || "All ages"} - capacity {c.capacity}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => edit(c)}>Edit</Button>
+                  <Button variant="outline" onClick={() => archive(c.id)} disabled={c.status === "inactive"}>Deactivate</Button>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl bg-muted/40 p-3">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-secondary">Students in this class</p>
+                  <p className="text-xs text-muted-foreground">{classBookings.length} registration{classBookings.length === 1 ? "" : "s"}</p>
+                </div>
+                {classBookings.length ? (
+                  <div className="space-y-2">
+                    {classBookings.map((booking) => (
+                      <div key={booking.id} className="grid gap-3 rounded-lg border bg-background p-3 lg:grid-cols-[1.2fr_0.8fr_190px] lg:items-center">
+                        <div>
+                          <p className="font-medium text-secondary">{booking.studentName}</p>
+                          <p className="text-xs text-muted-foreground">{booking.email} - {booking.phone || "no phone"}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant={booking.status === "confirmed" ? "default" : "outline"}>{booking.status}</Badge>
+                          <Badge variant="outline">{booking.paymentStatus}</Badge>
+                        </div>
+                        <Select
+                          value={booking.paymentStatus}
+                          disabled={savingPaymentId === booking.id}
+                          onValueChange={(value) => updateRosterPayment(booking, value as Booking["paymentStatus"])}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">pending</SelectItem>
+                            <SelectItem value="received">received</SelectItem>
+                            <SelectItem value="waived">waived</SelectItem>
+                            <SelectItem value="refunded">refunded</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No students registered yet.</p>
+                )}
+              </div>
             </div>
-          ))}
+          )})}
           {!classes.length && <p className="text-sm text-muted-foreground">No classes found.</p>}
         </CardContent>
       </Card>

@@ -247,6 +247,46 @@ function instructorPayload(input) {
   });
 }
 
+function parseClassDate(scheduleDay, scheduleTime) {
+  const day = String(scheduleDay || "").trim();
+  if (!day || !/\d{4}|\d{1,2}[/-]\d{1,2}|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec/i.test(day)) {
+    return null;
+  }
+  const time = String(scheduleTime || "").trim();
+  const candidates = [
+    time ? `${day} ${time}` : "",
+    day,
+  ].filter(Boolean);
+  for (const candidate of candidates) {
+    const parsed = new Date(candidate);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  return null;
+}
+
+async function autoDeactivatePastClasses() {
+  const rows = await supabaseFetch("/rest/v1/classes?select=id,title,schedule_day,schedule_time,status&status=in.(active,draft)", {
+    method: "GET",
+    headers: { Prefer: "return=representation" },
+  });
+  const now = new Date();
+  const expiredIds = (Array.isArray(rows) ? rows : [])
+    .filter((row) => {
+      const scheduledAt = parseClassDate(row.schedule_day, row.schedule_time);
+      return scheduledAt && scheduledAt.getTime() < now.getTime();
+    })
+    .map((row) => row.id)
+    .filter(Boolean);
+
+  if (!expiredIds.length) return { updated: 0 };
+
+  await supabaseFetch(`/rest/v1/classes?id=in.(${expiredIds.map((id) => encodeURIComponent(String(id))).join(",")})`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "inactive", updated_at: now.toISOString() }),
+  });
+  return { updated: expiredIds.length };
+}
+
 async function saveClass(input) {
   const id = typeof input.id === "string" && !input.id.startsWith("demo-") ? input.id : null;
   if (id) {
@@ -288,6 +328,8 @@ async function handleAction(action, payload) {
       return { checks: await runDiagnostic() };
     case "ensureImageBuckets":
       return ensureImageBuckets();
+    case "autoDeactivatePastClasses":
+      return autoDeactivatePastClasses();
     case "uploadImage":
       return uploadImage(payload);
     case "saveClass":
