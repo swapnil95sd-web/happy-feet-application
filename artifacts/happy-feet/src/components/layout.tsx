@@ -121,35 +121,35 @@ export function Navigation() {
 
           {!isLoading && (
             isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                    <Avatar className="h-8 w-8">
-                      {user?.user_metadata?.avatar_url && <AvatarImage src={user.user_metadata.avatar_url} alt={displayName} />}
-                      <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-semibold">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuLabel className="font-normal">
-                    <p className="text-sm font-medium">{displayName}</p>
-                    {profile?.role && <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>}
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin" className="cursor-pointer">
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Admin dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-3">
+                <Link href="/admin" className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-secondary/90">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                      <Avatar className="h-8 w-8">
+                        {user?.user_metadata?.avatar_url && <AvatarImage src={user.user_metadata.avatar_url} alt={displayName} />}
+                        <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-semibold">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuLabel className="font-normal">
+                      <p className="text-sm font-medium">{displayName}</p>
+                      {profile?.role && <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ) : (
               <Link href="/admin" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                 <User className="h-4 w-4" />

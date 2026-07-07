@@ -27,6 +27,7 @@ type AuthContextValue = {
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const bootstrapAdminEmail = import.meta.env.VITE_ADMIN_EMAIL as string | undefined;
+const studioSlug = (import.meta.env.VITE_STUDIO_SLUG as string | undefined) || "happy-feet";
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
@@ -44,6 +45,13 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function normalizeRole(value: unknown): StudioRole {
   return value === "admin" || value === "instructor" || value === "student" ? value : "student";
+}
+
+function normalizeStudioMemberRole(value: unknown): StudioRole | null {
+  if (value === "owner" || value === "admin") return "admin";
+  if (value === "instructor") return "instructor";
+  if (value === "student") return "student";
+  return null;
 }
 
 function fullNameFromUser(user: User | null) {
@@ -65,10 +73,34 @@ async function loadProfile(client: SupabaseClient, user: User): Promise<StudioPr
 
   const email = (data?.email as string | null | undefined) ?? user.email ?? null;
   const profileRole = normalizeRole(data?.role);
+  let studioMemberRole: StudioRole | null = null;
+  if (email) {
+    try {
+      const { data: studio } = await client
+        .from("studios")
+        .select("id")
+        .eq("slug", studioSlug)
+        .maybeSingle();
+      const studioId = (studio?.id as string | null | undefined) ?? null;
+      if (studioId) {
+        const { data: member } = await client
+          .from("studio_members")
+          .select("role,status")
+          .eq("studio_id", studioId)
+          .eq("email", email)
+          .eq("status", "active")
+          .maybeSingle();
+        studioMemberRole = normalizeStudioMemberRole(member?.role);
+      }
+    } catch {
+      studioMemberRole = null;
+    }
+  }
   const fallbackRole =
-    !data?.role && bootstrapAdminEmail && email?.toLowerCase() === bootstrapAdminEmail.toLowerCase()
+    studioMemberRole ??
+    (!data?.role && bootstrapAdminEmail && email?.toLowerCase() === bootstrapAdminEmail.toLowerCase()
       ? "admin"
-      : profileRole;
+      : profileRole);
 
   return {
     id: user.id,

@@ -44,6 +44,9 @@ function ProtectedRoute({
           <p className="text-muted-foreground text-sm">
             Your account does not have permission to open this dashboard.
           </p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            If you were just added as a studio owner, log out and request a fresh sign-in link.
+          </p>
         </div>
       </div>
     );
