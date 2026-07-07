@@ -154,9 +154,9 @@ export function Navigation() {
                 </DropdownMenu>
               </div>
             ) : (
-              <Link href="/admin" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/admin" className="flex items-center gap-2 rounded-full border border-primary/30 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground">
                 <User className="h-4 w-4" />
-                Admin log in
+                Admin
               </Link>
             )
           )}
@@ -229,9 +229,9 @@ export function Navigation() {
                     </button>
                   </div>
                 ) : (
-                  <Link href="/admin" className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                  <Link href="/admin" className="flex items-center justify-center gap-2 rounded-full border border-primary/30 px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground">
                     <User className="h-4 w-4" />
-                    Admin log in
+                    Admin
                   </Link>
                 )}
               </div>
