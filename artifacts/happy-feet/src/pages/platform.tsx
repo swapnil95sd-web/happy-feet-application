@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { Building2, CircleDollarSign, LayoutDashboard, Plus, Users } from "lucide-react";
+import { Building2, CircleDollarSign, ExternalLink, LayoutDashboard, Plus, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +32,15 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 64);
+}
+
+const STUDIO_PUBLIC_URLS: Record<string, string> = {
+  "happy-feet": "https://happy-feet-application-api-server.vercel.app/",
+  "tanvi-dance-academy": "https://tanvi-dance-academy-iota.vercel.app/",
+};
+
+function studioPublicUrl(studio: PlatformStudio) {
+  return STUDIO_PUBLIC_URLS[studio.slug] ?? `https://${studio.slug}.vercel.app/`;
 }
 
 export default function PlatformAdmin() {
@@ -186,7 +195,16 @@ export default function PlatformAdmin() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-serif text-xl font-bold text-secondary">{studio.name}</p>
+                          <a
+                            href={studioPublicUrl(studio)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 font-serif text-xl font-bold text-secondary transition-colors hover:text-primary"
+                            title={`Open ${studio.name}`}
+                          >
+                            {studio.name}
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
                           <Badge variant={studio.status === "active" ? "default" : "outline"}>{studio.status}</Badge>
                         </div>
                         <p className="mt-1 text-sm text-muted-foreground">/{studio.slug}</p>
