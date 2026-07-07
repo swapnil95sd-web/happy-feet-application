@@ -36,11 +36,18 @@ function slugify(value: string) {
 
 const STUDIO_PUBLIC_URLS: Record<string, string> = {
   "happy-feet": "https://happy-feet-application-api-server.vercel.app/",
+  "happy-feet-dance-academy": "https://happy-feet-application-api-server.vercel.app/",
+  tanvi: "https://tanvi-dance-academy-iota.vercel.app/",
   "tanvi-dance-academy": "https://tanvi-dance-academy-iota.vercel.app/",
 };
 
 function studioPublicUrl(studio: PlatformStudio) {
-  return STUDIO_PUBLIC_URLS[studio.slug] ?? `https://${studio.slug}.vercel.app/`;
+  const slug = studio.slug.toLowerCase();
+  const name = studio.name.toLowerCase();
+  if (STUDIO_PUBLIC_URLS[slug]) return STUDIO_PUBLIC_URLS[slug];
+  if (slug.includes("tanvi") || name.includes("tanvi")) return STUDIO_PUBLIC_URLS.tanvi;
+  if (slug.includes("happy") || name.includes("happy feet")) return STUDIO_PUBLIC_URLS["happy-feet"];
+  return `https://${slug}.vercel.app/`;
 }
 
 export default function PlatformAdmin() {
@@ -208,6 +215,7 @@ export default function PlatformAdmin() {
                           <Badge variant={studio.status === "active" ? "default" : "outline"}>{studio.status}</Badge>
                         </div>
                         <p className="mt-1 text-sm text-muted-foreground">/{studio.slug}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{studioPublicUrl(studio)}</p>
                         <p className="mt-1 text-xs text-muted-foreground">{studio.contactEmail || "No contact email"} · {studio.paymentHandle || "No payment handle"}</p>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-center text-xs">
