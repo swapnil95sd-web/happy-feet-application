@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/supabase";
+import { DEFAULT_STUDIO, useActiveStudio } from "@/lib/studioflow";
 
 type NavLink =
   | { type: "button"; label: string; section: string }
@@ -40,6 +41,7 @@ function goHomeTop() {
 export function Navigation() {
   const [location] = useLocation();
   const { user, profile, isAuthenticated, isLoading, logout } = useAuth();
+  const { data: studio } = useActiveStudio();
 
   const links: NavLink[] = [
     { type: "button", label: "Book Class", section: "classes" },
@@ -57,16 +59,24 @@ export function Navigation() {
         .join("")
         .toUpperCase() || "U"
     : "U";
+  const studioName = studio.name || DEFAULT_STUDIO.name;
+  const studioInitials = studioName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "DS";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <button onClick={goHomeTop} className="flex items-center gap-3 text-left">
           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-serif font-bold text-lg shadow-sm">
-            HF
+            {studioInitials}
           </div>
           <div className="flex flex-col">
-            <span className="font-serif font-bold text-lg leading-tight text-foreground">Happy Feet</span>
+            <span className="font-serif font-bold text-lg leading-tight text-foreground">{studioName}</span>
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Dance boldly. Feel at home.</span>
           </div>
         </button>

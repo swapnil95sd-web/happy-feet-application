@@ -32,6 +32,7 @@ import {
   type Instructor,
   type PracticeVideo,
   useAdminStats,
+  useActiveStudio,
   useAnnouncements,
   useBookings,
   useGalleryImages,
@@ -82,6 +83,7 @@ export default function Admin() {
   const videosQuery = usePracticeVideos();
   const bookingsQuery = useBookings();
   const galleryQuery = useGalleryImages();
+  const studioQuery = useActiveStudio();
   const stats = useAdminStats(classesQuery.data, bookingsQuery.data, announcementsQuery.data);
 
   useEffect(() => {
@@ -112,8 +114,10 @@ export default function Admin() {
       <section className="px-4 py-10" style={{ background: "radial-gradient(circle at 20% 0, rgba(58,31,58,.08), transparent 40%)" }}>
         <div className="container mx-auto max-w-6xl">
           <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-primary">StudioFlow Admin</p>
-          <h1 className="font-serif text-4xl font-bold text-secondary">Happy Feet Command Center</h1>
-          <p className="mt-1 text-muted-foreground">Manage public content, classes, bookings, announcements, videos, and image URLs.</p>
+          <h1 className="font-serif text-4xl font-bold text-secondary">StudioFlow Command Center</h1>
+          <p className="mt-1 text-muted-foreground">
+            Managing {studioQuery.data.name}. Update public content, classes, bookings, announcements, videos, and images.
+          </p>
         </div>
       </section>
 

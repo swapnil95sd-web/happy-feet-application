@@ -97,7 +97,7 @@ async function getUserFromToken(token) {
   return response.json();
 }
 
-async function assertAdmin(user) {
+async function assertAdmin(user, studio) {
   const rows = await supabaseFetch(
     `/rest/v1/profiles?select=id,email,role&or=(id.eq.${encodeURIComponent(user.id)},email.eq.${encodeURIComponent(user.email || "")})`,
     { method: "GET", headers: { Prefer: "return=representation" } },
@@ -108,9 +108,40 @@ async function assertAdmin(user) {
   const bootstrapEmail = process.env.VITE_ADMIN_EMAIL;
   const isBootstrapAdmin =
     bootstrapEmail && user.email && bootstrapEmail.toLowerCase() === user.email.toLowerCase();
+  if (profile?.role === "admin" || isBootstrapAdmin) return;
+
+  if (studio?.id && user.email) {
+    try {
+      const members = await supabaseFetch(
+        `/rest/v1/studio_members?select=id,role,status&studio_id=eq.${encodeURIComponent(studio.id)}&email=eq.${encodeURIComponent(user.email)}&status=eq.active&role=in.(owner,admin)&limit=1`,
+        { method: "GET", headers: { Prefer: "return=representation" } },
+      );
+      if (Array.isArray(members) && members.length > 0) return;
+    } catch {
+      // Fall through to the normal admin error.
+    }
+  }
+
   if (profile?.role !== "admin" && !isBootstrapAdmin) {
     throw new Error("This login is not marked as admin in Supabase profiles.");
   }
+}
+
+async function resolveStudio(studioSlug) {
+  const slug = String(studioSlug || process.env.VITE_STUDIO_SLUG || "happy-feet");
+  try {
+    const rows = await supabaseFetch(
+      `/rest/v1/studios?select=id,slug,name&slug=eq.${encodeURIComponent(slug)}&limit=1`,
+      { method: "GET", headers: { Prefer: "return=representation" } },
+    );
+    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  } catch {
+    return null;
+  }
+}
+
+function withStudioId(payload, studio) {
+  return studio?.id ? { ...payload, studioId: studio.id, studio_id: studio.id } : payload;
 }
 
 function clean(payload) {
@@ -226,6 +257,7 @@ function classPayload(input) {
     featured: Boolean(input.featured),
     status: ["active", "inactive", "draft"].includes(input.status) ? input.status : "active",
     image_url: input.imageUrl || input.image_url || null,
+    studio_id: input.studioId || input.studio_id,
     updated_at: new Date().toISOString(),
   });
 }
@@ -243,6 +275,7 @@ function instructorPayload(input) {
     bio: input.bio || null,
     specialties,
     image_url: input.imageUrl || input.image_url || null,
+    studio_id: input.studioId || input.studio_id,
     is_active: input.isActive !== false,
   });
 }
@@ -264,8 +297,9 @@ function parseClassDate(scheduleDay, scheduleTime) {
   return null;
 }
 
-async function autoDeactivatePastClasses() {
-  const rows = await supabaseFetch("/rest/v1/classes?select=id,title,schedule_day,schedule_time,status&status=in.(active,draft)", {
+async function autoDeactivatePastClasses(studio) {
+  const studioFilter = studio?.id ? `&studio_id=eq.${encodeURIComponent(studio.id)}` : "";
+  const rows = await supabaseFetch(`/rest/v1/classes?select=id,title,schedule_day,schedule_time,status&status=in.(active,draft)${studioFilter}`, {
     method: "GET",
     headers: { Prefer: "return=representation" },
   });
@@ -301,51 +335,52 @@ async function saveClass(input) {
   });
 }
 
-async function runDiagnostic() {
+async function runDiagnostic(studio) {
   const checks = [];
   checks.push({ name: "api_route", ok: true });
   checks.push({ name: "supabase_url", ok: Boolean(getSupabaseUrl()) });
   checks.push({ name: "supabase_anon_key", ok: Boolean(getSupabaseAnonKey()) });
   checks.push({ name: "service_role_key", ok: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) });
   const testTitle = `Diagnostic Class ${Date.now()}`;
-  await saveClass({
+  await saveClass(withStudioId({
     title: testTitle,
     style: "Diagnostic",
     description: "Temporary diagnostic row. Safe to delete.",
     status: "draft",
     price: 0,
     capacity: 1,
-  });
+  }, studio));
   checks.push({ name: "insert_class", ok: true });
   await supabaseFetch(`/rest/v1/classes?title=eq.${encodeURIComponent(testTitle)}`, { method: "DELETE" });
   checks.push({ name: "delete_diagnostic_class", ok: true });
   return checks;
 }
 
-async function handleAction(action, payload) {
+async function handleAction(action, payload, studio) {
+  const scopedPayload = withStudioId(payload, studio);
   switch (action) {
     case "diagnostic":
-      return { checks: await runDiagnostic() };
+      return { checks: await runDiagnostic(studio) };
     case "ensureImageBuckets":
       return ensureImageBuckets();
     case "autoDeactivatePastClasses":
-      return autoDeactivatePastClasses();
+      return autoDeactivatePastClasses(studio);
     case "uploadImage":
       return uploadImage(payload);
     case "saveClass":
-      await saveClass(payload);
+      await saveClass(scopedPayload);
       return {};
     case "saveInstructor": {
-      const id = typeof payload.id === "string" && !payload.id.startsWith("demo-") ? payload.id : null;
+      const id = typeof scopedPayload.id === "string" && !scopedPayload.id.startsWith("demo-") ? scopedPayload.id : null;
       if (id) {
         await supabaseFetch(`/rest/v1/instructors?id=eq.${encodeURIComponent(id)}`, {
           method: "PATCH",
-          body: JSON.stringify(instructorPayload(payload)),
+          body: JSON.stringify(instructorPayload(scopedPayload)),
         });
       } else {
         await supabaseFetch("/rest/v1/instructors", {
           method: "POST",
-          body: JSON.stringify(instructorPayload(payload)),
+          body: JSON.stringify(instructorPayload(scopedPayload)),
         });
       }
       return {};
@@ -363,10 +398,10 @@ async function handleAction(action, payload) {
       });
       return {};
     case "saveHomepage":
-      await supabaseFetch("/rest/v1/site_content?on_conflict=key", {
+      await supabaseFetch(studio?.id ? "/rest/v1/site_content?on_conflict=studio_id,key" : "/rest/v1/site_content?on_conflict=key", {
         method: "POST",
         headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify({ key: "homepage", value: payload, updated_at: new Date().toISOString() }),
+        body: JSON.stringify(clean({ key: "homepage", studio_id: studio?.id, value: payload, updated_at: new Date().toISOString() })),
       });
       return {};
     case "saveAnnouncement":
@@ -374,10 +409,11 @@ async function handleAction(action, payload) {
         method: "POST",
         headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify(clean({
-          id: payload.id?.startsWith?.("demo-") ? undefined : payload.id,
-          title: payload.title,
-          body: payload.message,
-          published: payload.status === "published",
+          id: scopedPayload.id?.startsWith?.("demo-") ? undefined : scopedPayload.id,
+          studio_id: scopedPayload.studio_id,
+          title: scopedPayload.title,
+          body: scopedPayload.message,
+          published: scopedPayload.status === "published",
         })),
       });
       return {};
@@ -386,11 +422,12 @@ async function handleAction(action, payload) {
         method: "POST",
         headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify(clean({
-          id: payload.id,
-          title: payload.title,
-          video_url: payload.url,
-          description: payload.description,
-          class_id: payload.classId || null,
+          id: scopedPayload.id,
+          studio_id: scopedPayload.studio_id,
+          title: scopedPayload.title,
+          video_url: scopedPayload.url,
+          description: scopedPayload.description,
+          class_id: scopedPayload.classId || null,
         })),
       });
       return {};
@@ -409,11 +446,12 @@ async function handleAction(action, payload) {
         method: "POST",
         headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify(clean({
-          id: payload.id,
-          title: payload.title,
-          image_url: payload.imageUrl,
-          alt_text: payload.altText,
-          is_visible: payload.status !== "hidden",
+          id: scopedPayload.id,
+          studio_id: scopedPayload.studio_id,
+          title: scopedPayload.title,
+          image_url: scopedPayload.imageUrl,
+          alt_text: scopedPayload.altText,
+          is_visible: scopedPayload.status !== "hidden",
         })),
       });
       return {};
@@ -432,10 +470,10 @@ module.exports = async function handler(req, res) {
     const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
     if (!token) throw new Error("Missing admin session. Please log in again.");
     const user = await getUserFromToken(token);
-    await assertAdmin(user);
-
     const body = parseBody(req);
-    const result = await handleAction(body.action, body.payload || {});
+    const studio = await resolveStudio(body.studioSlug);
+    await assertAdmin(user, studio);
+    const result = await handleAction(body.action, body.payload || {}, studio);
     return res.status(200).json({ ok: true, ...result });
   } catch (error) {
     return res.status(400).json({

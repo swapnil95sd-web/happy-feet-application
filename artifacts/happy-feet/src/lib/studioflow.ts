@@ -1,6 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
+export type Studio = {
+  id: string | null;
+  slug: string;
+  name: string;
+  status: string;
+  primaryColor: string;
+  secondaryColor: string;
+  logoUrl: string | null;
+  contactEmail: string;
+  contactPhone: string;
+  paymentLabel: string;
+  paymentHandle: string;
+};
+
 export type DanceClass = {
   id: string;
   name: string;
@@ -94,6 +108,66 @@ export type GalleryImage = {
   altText: string | null;
   status: string;
 };
+
+export const DEFAULT_STUDIO: Studio = {
+  id: null,
+  slug: import.meta.env.VITE_STUDIO_SLUG || "happy-feet",
+  name: "Happy Feet Dance Academy",
+  status: "active",
+  primaryColor: "#c0185a",
+  secondaryColor: "#3a1f3a",
+  logoUrl: null,
+  contactEmail: "hello@happyfeetnycnj.com",
+  contactPhone: "(555) 123-4567",
+  paymentLabel: "Venmo",
+  paymentHandle: "@HappyFeetNYCNJ",
+};
+
+let activeStudioPromise: Promise<Studio> | null = null;
+
+function currentStudioSlug() {
+  return import.meta.env.VITE_STUDIO_SLUG || DEFAULT_STUDIO.slug;
+}
+
+function studioFromRow(row: Record<string, unknown> | null): Studio {
+  if (!row) return DEFAULT_STUDIO;
+  return {
+    ...DEFAULT_STUDIO,
+    id: row.id ? String(row.id) : null,
+    slug: String(row.slug ?? DEFAULT_STUDIO.slug),
+    name: String(row.name ?? DEFAULT_STUDIO.name),
+    status: String(row.status ?? "active"),
+    primaryColor: String(row.primary_color ?? DEFAULT_STUDIO.primaryColor),
+    secondaryColor: String(row.secondary_color ?? DEFAULT_STUDIO.secondaryColor),
+    logoUrl: (row.logo_url ?? null) as string | null,
+    contactEmail: String(row.contact_email ?? DEFAULT_STUDIO.contactEmail),
+    contactPhone: String(row.contact_phone ?? DEFAULT_STUDIO.contactPhone),
+    paymentLabel: String(row.payment_label ?? DEFAULT_STUDIO.paymentLabel),
+    paymentHandle: String(row.payment_handle ?? DEFAULT_STUDIO.paymentHandle),
+  };
+}
+
+async function loadActiveStudio(): Promise<Studio> {
+  if (!supabase) return DEFAULT_STUDIO;
+  try {
+    const { data, error } = await supabase
+      .from("studios")
+      .select("*")
+      .eq("slug", currentStudioSlug())
+      .maybeSingle();
+    return error ? DEFAULT_STUDIO : studioFromRow((data as Record<string, unknown> | null) ?? null);
+  } catch {
+    return DEFAULT_STUDIO;
+  }
+}
+
+async function getActiveStudio(): Promise<Studio> {
+  if (!supabase) return DEFAULT_STUDIO;
+  if (!activeStudioPromise) {
+    activeStudioPromise = loadActiveStudio();
+  }
+  return activeStudioPromise;
+}
 
 const DEMO_CLASSES: DanceClass[] = [
   {
@@ -329,7 +403,9 @@ export function useStudioClasses(category?: string) {
         return;
       }
 
-      const query = supabase.from("classes").select("*, instructors(name)").order("featured", { ascending: false });
+      const studio = await getActiveStudio();
+      let query = supabase.from("classes").select("*, instructors(name)").order("featured", { ascending: false });
+      if (studio.id) query = query.eq("studio_id", studio.id);
       const { data: rows, error } = await query;
       if (!cancelled) {
         const mapped = error || !rows ? [] : rows.map((row) => mapClass(row as Record<string, unknown>));
@@ -346,6 +422,34 @@ export function useStudioClasses(category?: string) {
   return { data, isLoading, refetch, isSupabaseConfigured };
 }
 
+export function useActiveStudio() {
+  const [data, setData] = useState(DEFAULT_STUDIO);
+  const [isLoading, setIsLoading] = useState(true);
+  const [version, setVersion] = useState(0);
+  const refetch = useCallback(() => {
+    activeStudioPromise = null;
+    setVersion((v) => v + 1);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setIsLoading(true);
+      const studio = await getActiveStudio();
+      if (!cancelled) {
+        setData(studio);
+        setIsLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [version]);
+
+  return { data, isLoading, refetch };
+}
+
 export function useHomepageContent() {
   const [data, setData] = useState(DEFAULT_HOMEPAGE);
   const [isLoading, setIsLoading] = useState(true);
@@ -360,7 +464,14 @@ export function useHomepageContent() {
         setIsLoading(false);
         return;
       }
-      const { data: row } = await supabase.from("site_content").select("*").eq("key", "homepage").maybeSingle();
+      const studio = await getActiveStudio();
+      let query = supabase.from("site_content").select("*").eq("key", "homepage");
+      if (studio.id) query = query.eq("studio_id", studio.id);
+      let { data: row } = await query.maybeSingle();
+      if (!row && studio.id) {
+        const fallback = await supabase.from("site_content").select("*").eq("key", "homepage").is("studio_id", null).maybeSingle();
+        row = fallback.data;
+      }
       setData(homepageFromRow((row as Record<string, unknown> | null) ?? null));
       setIsLoading(false);
     }
@@ -384,7 +495,10 @@ export function useInstructors() {
         setIsLoading(false);
         return;
       }
-      const { data: rows, error } = await supabase.from("instructors").select("*").order("created_at", { ascending: true });
+      const studio = await getActiveStudio();
+      let query = supabase.from("instructors").select("*").order("created_at", { ascending: true });
+      if (studio.id) query = query.eq("studio_id", studio.id);
+      const { data: rows, error } = await query;
       if (error || !rows?.length) {
         setData(DEMO_INSTRUCTORS);
       } else {
@@ -429,7 +543,10 @@ export function useAnnouncements() {
         setIsLoading(false);
         return;
       }
-      const { data: rows } = await supabase.from("announcements").select("*").order("created_at", { ascending: false });
+      const studio = await getActiveStudio();
+      let query = supabase.from("announcements").select("*").order("created_at", { ascending: false });
+      if (studio.id) query = query.eq("studio_id", studio.id);
+      const { data: rows } = await query;
       setData(
         (rows ?? []).map((row) => ({
           id: String(row.id),
@@ -461,7 +578,10 @@ export function usePracticeVideos() {
         setIsLoading(false);
         return;
       }
-      const { data: rows } = await supabase.from("practice_videos").select("*, classes(title)");
+      const studio = await getActiveStudio();
+      let query = supabase.from("practice_videos").select("*, classes(title)");
+      if (studio.id) query = query.eq("studio_id", studio.id);
+      const { data: rows } = await query;
       setData(
         (rows ?? []).map((row) => ({
           id: String(row.id),
@@ -494,7 +614,10 @@ export function useBookings() {
         setIsLoading(false);
         return;
       }
-      const { data: rows } = await supabase.from("bookings").select("*, classes(title)").order("created_at", { ascending: false });
+      const studio = await getActiveStudio();
+      let query = supabase.from("bookings").select("*, classes(title)").order("created_at", { ascending: false });
+      if (studio.id) query = query.eq("studio_id", studio.id);
+      const { data: rows } = await query;
       setData(
         (rows ?? []).map((row) => ({
           id: String(row.id),
@@ -532,7 +655,10 @@ export function useGalleryImages() {
         setIsLoading(false);
         return;
       }
-      const { data: rows } = await supabase.from("gallery_images").select("*").order("created_at", { ascending: false });
+      const studio = await getActiveStudio();
+      let query = supabase.from("gallery_images").select("*").order("created_at", { ascending: false });
+      if (studio.id) query = query.eq("studio_id", studio.id);
+      const { data: rows } = await query;
       setData(
         (rows ?? []).map((row) => ({
           id: String(row.id),
@@ -626,7 +752,8 @@ export async function createBooking(input: {
   notes?: string;
 }) {
   if (!supabase) return { demo: true };
-  const { error } = await supabase.from("bookings").insert({
+  const studio = await getActiveStudio();
+  const bookingPayload: Record<string, string | null> = {
     class_id: input.classId,
     student_name: `${input.firstName} ${input.lastName}`.trim(),
     student_email: input.email,
@@ -635,7 +762,9 @@ export async function createBooking(input: {
     notes: input.notes || null,
     booking_status: "confirmed",
     payment_status: "pending",
-  });
+  };
+  if (studio.id) bookingPayload.studio_id = studio.id;
+  const { error } = await supabase.from("bookings").insert(bookingPayload);
   if (error) throw error;
   return { demo: false };
 }
@@ -681,7 +810,7 @@ async function adminWrite<T extends Record<string, unknown> = Record<string, unk
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ action, payload }),
+    body: JSON.stringify({ action, studioSlug: currentStudioSlug(), payload }),
   });
   const text = await response.text();
   let body: T & { ok?: boolean; error?: string };

@@ -15,6 +15,7 @@ Vercel is configured by `vercel.json` to build the Happy Feet client:
 
 - `VITE_SUPABASE_URL`: Supabase project URL.
 - `VITE_SUPABASE_ANON_KEY`: Supabase anon public key.
+- `VITE_STUDIO_SLUG`: active studio/client slug. Use `happy-feet` for the current Happy Feet client. If omitted, the app defaults to `happy-feet`.
 - `VITE_ADMIN_EMAIL`: admin email used as a fallback while Supabase profile roles are being set up.
 - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key used only by Vercel server functions for admin-only writes and image uploads. This powers classes, homepage content, announcements, videos, gallery, booking updates, and uploads to Supabase Storage. Never expose this in frontend code.
 
@@ -40,6 +41,18 @@ For real student emails, verify a sending domain in Resend and use that address 
    - `site-images`
    - `gallery`
    - `instructor-images`
+
+## Multi-Studio Setup
+
+Happy Feet is the first client studio. To enable the reusable StudioFlow platform foundation:
+
+1. Back up the Supabase database.
+2. Run `docs/StudioFlow_Multi_Studio_Migration.sql` in Supabase SQL Editor.
+3. Set `VITE_STUDIO_SLUG=happy-feet` in Vercel.
+4. Redeploy Vercel.
+5. Confirm the admin dashboard says it is managing Happy Feet.
+
+For a second studio, add a row to `studios`, add a matching `studio_members` owner/admin email, and deploy another Vercel project or domain with `VITE_STUDIO_SLUG` set to that studio's slug.
 
 ## Local Verification
 
