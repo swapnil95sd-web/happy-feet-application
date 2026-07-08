@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +9,7 @@ import About from "@/pages/about";
 import Admin from "@/pages/admin";
 import PlatformAdmin from "@/pages/platform";
 import TryProduct from "@/pages/try-product";
+import Portal from "@/pages/portal";
 import { AuthProvider, type StudioRole, useAuth } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import type { ComponentType, FormEvent } from "react";
@@ -83,9 +84,9 @@ function SignInPanel({ isSupabaseConfigured }: { isSupabaseConfigured: boolean }
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border bg-card p-6 shadow-sm">
         <div className="text-center mb-5">
-          <h2 className="font-serif text-2xl font-bold text-foreground mb-2">Sign in to continue</h2>
+          <h2 className="font-serif text-2xl font-bold text-foreground mb-2">Create account or sign in</h2>
           <p className="text-muted-foreground text-sm">
-            Use the email connected to your StudioFlow profile.
+            Enter your email and we will send a secure magic link to open your StudioFlow workspace.
           </p>
         </div>
         {!isSupabaseConfigured ? (
@@ -137,7 +138,7 @@ function Router() {
       <Route path="/about" component={About} />
       <Route path="/try" component={TryProduct} />
       <Route path="/portal">
-        <Redirect to="/#classes" />
+        <ProtectedRoute component={Portal} />
       </Route>
       <Route path="/admin">
         <ProtectedRoute component={Admin} roles={["admin"]} />

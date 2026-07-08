@@ -1,316 +1,226 @@
 import { useState } from "react";
 import {
-  useGetStudent,
-  useGetStudentEnrollments,
-  useListVideos,
-  useListAnnouncements,
-  getGetStudentQueryKey,
-  getGetStudentEnrollmentsQueryKey,
-} from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+  BellRing,
+  CalendarCheck2,
+  CheckCircle2,
+  ClipboardList,
+  CreditCard,
+  ImagePlus,
+  LayoutDashboard,
+  Mail,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarDays, MapPin, User, Video, Megaphone, Star, Receipt, LayoutDashboard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/supabase";
 
-const DEMO_STUDENT_ID = 1;
+const tabs = [
+  { id: "launch", label: "Launch plan", icon: Sparkles },
+  { id: "classes", label: "Classes", icon: CalendarCheck2 },
+  { id: "students", label: "Students", icon: Users },
+  { id: "payments", label: "Payments", icon: CreditCard },
+];
 
-const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "classes", label: "My Classes", icon: CalendarDays },
-  { id: "videos", label: "Practice Videos", icon: Video },
-  { id: "showcase", label: "Showcase Hub", icon: Star },
-  { id: "receipts", label: "Receipts", icon: Receipt },
+const tasks = [
+  { title: "Add your first class", body: "Name, instructor, schedule, price, capacity, and class image.", done: true },
+  { title: "Share your booking page", body: "Students get one link with everything they need to register.", done: true },
+  { title: "Invite an instructor", body: "Give instructors access to rosters and class notes.", done: false },
+  { title: "Confirm payment method", body: "Track paid, pending, waived, and refunded students.", done: false },
+];
+
+const classes = [
+  { title: "Bollywood Beginner", tag: "Public class", status: "Live", note: "18 students registered" },
+  { title: "Kids Showcase Team", tag: "Program", status: "Review", note: "4 payment follow-ups" },
+  { title: "Private Coaching", tag: "1:1", status: "Draft", note: "Ready for image upload" },
+];
+
+const students = [
+  { name: "Maya Shah", className: "Bollywood Beginner", status: "Paid" },
+  { name: "Ari Patel", className: "Kids Showcase Team", status: "Pending" },
+  { name: "Neha Rao", className: "BollyHop Performance Lab", status: "Paid" },
+  { name: "Dev Mehta", className: "Private Coaching", status: "Follow up" },
 ];
 
 export default function Portal() {
-  const [activeTab, setActiveTab] = useState("dashboard");
-
-  const { data: student, isLoading: studentLoading } = useGetStudent(DEMO_STUDENT_ID, {
-    query: { queryKey: getGetStudentQueryKey(DEMO_STUDENT_ID) },
-  });
-  const { data: enrollments, isLoading: enrollmentsLoading } = useGetStudentEnrollments(DEMO_STUDENT_ID, {
-    query: { queryKey: getGetStudentEnrollmentsQueryKey(DEMO_STUDENT_ID) },
-  });
-  const { data: videos } = useListVideos();
-  const { data: announcements } = useListAnnouncements();
-
-  const initials = student
-    ? `${student.firstName[0]}${student.lastName[0]}`
-    : "??";
-
-  const nextClass = enrollments?.[0]?.class;
+  const [active, setActive] = useState("launch");
+  const { user, profile } = useAuth();
+  const displayName = profile?.fullName || user?.email?.split("@")[0] || "Studio owner";
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Portal Hero */}
-      <section
-        className="py-12 px-4"
-        style={{ background: "radial-gradient(circle at 80% 0, rgba(248,221,234,.9), transparent 40%), var(--color-background, #fffaf6)" }}
-      >
-        <div className="container max-w-6xl mx-auto">
-          <p className="text-sm font-semibold uppercase tracking-widest text-primary mb-1">Student Portal</p>
-          <h1 className="font-serif text-4xl md:text-5xl font-bold text-secondary">
-            Your space to grow.
-          </h1>
-          <p className="text-muted-foreground mt-2 max-w-xl">
-            Track your classes, watch practice videos, follow the showcase, and access your receipts.
-          </p>
+    <div className="min-h-screen bg-[#f8f4ef] text-[#18131d]">
+      <section className="px-4 py-10 md:px-6">
+        <div className="mx-auto max-w-7xl">
+          <div className="rounded-[34px] bg-[#18131d] p-6 text-white shadow-2xl md:p-8">
+            <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+              <div>
+                <Badge className="mb-5 bg-white/12 text-white">StudioFlow Portal</Badge>
+                <h1 className="font-serif text-4xl font-bold leading-tight md:text-6xl">
+                  Welcome, {displayName}.
+                </h1>
+                <p className="mt-4 max-w-xl text-base leading-7 text-white/72">
+                  This is the workspace a new studio sees after account creation:
+                  publish offers, track students, manage payments, and prepare every class from one place.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  { label: "Public page", value: "Ready", icon: LayoutDashboard },
+                  { label: "First offer", value: "Live", icon: ImagePlus },
+                  { label: "Roster", value: "Growing", icon: ClipboardList },
+                  { label: "Follow-up", value: "Queued", icon: BellRing },
+                ].map(({ label, value, icon: Icon }) => (
+                  <div key={label} className="rounded-2xl border border-white/10 bg-white/8 p-4">
+                    <Icon className="h-5 w-5 text-white/55" />
+                    <p className="mt-5 font-serif text-2xl font-bold">{value}</p>
+                    <p className="text-sm text-white/55">{label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-6 lg:grid-cols-[260px_1fr]">
+            <aside className="rounded-[28px] border border-[#e6ddd5] bg-white p-3 shadow-sm">
+              {tabs.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActive(id)}
+                  className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold transition ${
+                    active === id ? "bg-[#18131d] text-white" : "text-[#675e70] hover:bg-[#f5eee8] hover:text-[#18131d]"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </aside>
+
+            <main className="rounded-[28px] border border-[#e6ddd5] bg-white p-5 shadow-sm md:p-6">
+              {active === "launch" && <LaunchPlan />}
+              {active === "classes" && <ClassesView />}
+              {active === "students" && <StudentsView />}
+              {active === "payments" && <PaymentsView />}
+            </main>
+          </div>
         </div>
       </section>
+    </div>
+  );
+}
 
-      <div className="container max-w-6xl mx-auto px-4 pb-16">
-        <div className="grid md:grid-cols-[240px_1fr] gap-6 mt-6">
-          {/* Sidebar */}
-          <aside className="space-y-1">
-            {/* Student identity card */}
-            <Card className="mb-4">
-              <CardContent className="pt-5 pb-4 px-4">
-                {studentLoading ? (
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="w-12 h-12 rounded-full" />
-                    <div className="space-y-1"><Skeleton className="h-4 w-28" /><Skeleton className="h-3 w-20" /></div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                      style={{ background: "linear-gradient(135deg, #c0185a, #3a1f3a)" }}>
-                      {initials}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-secondary text-sm leading-tight">
-                        {student ? `${student.firstName} ${student.lastName}` : "Demo Student"}
-                      </p>
-                      <p className="text-xs text-muted-foreground capitalize">{student?.studentType ?? "Adult"}</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                data-testid={`nav-${id}`}
-                onClick={() => setActiveTab(id)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all text-left ${
-                  activeTab === id
-                    ? "bg-secondary text-white"
-                    : "text-muted-foreground hover:bg-card hover:text-secondary"
-                }`}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {label}
-              </button>
-            ))}
-          </aside>
-
-          {/* Main Content */}
-          <main>
-            {/* Dashboard Tab */}
-            {activeTab === "dashboard" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="font-serif text-2xl font-bold text-secondary">
-                      {studentLoading ? "Welcome back!" : `Hi ${student?.firstName ?? "there"}, ready for rehearsal?`}
-                    </h2>
-                    {nextClass && (
-                      <p className="text-muted-foreground text-sm mt-1">
-                        Next class: {nextClass.name} · {nextClass.scheduleDay} {nextClass.scheduleTime}
-                      </p>
-                    )}
-                  </div>
-                  <Badge variant="outline" className="border-primary text-primary hidden sm:flex">Demo Student</Badge>
-                </div>
-
-                <div className="grid sm:grid-cols-3 gap-4">
-                  <Card>
-                    <CardContent className="pt-5">
-                      <p className="text-3xl font-serif font-bold text-secondary">{enrollments?.length ?? 0}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Active Classes</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-5">
-                      <p className="text-3xl font-serif font-bold text-secondary">{videos?.length ?? 0}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Practice Videos</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-5">
-                      <p className="text-3xl font-serif font-bold text-secondary">{announcements?.length ?? 0}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Announcements</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {announcements && announcements.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base font-semibold flex items-center gap-2 text-secondary">
-                        <Megaphone className="w-4 h-4 text-primary" /> Latest Announcement
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="font-semibold text-secondary">{announcements[announcements.length - 1].title}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{announcements[announcements.length - 1].message}</p>
-                    </CardContent>
-                  </Card>
-                )}
+function LaunchPlan() {
+  return (
+    <div>
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#bf4b3a]">Launch plan</p>
+          <h2 className="mt-2 font-serif text-4xl font-bold">Your studio is almost ready to share.</h2>
+        </div>
+        <Button className="w-fit rounded-full bg-[#18131d]">Preview public page</Button>
+      </div>
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        {tasks.map((task) => (
+          <div key={task.title} className="rounded-2xl border border-[#eee3dc] bg-[#fbf7f2] p-5">
+            <div className="flex items-start gap-3">
+              <div className={`mt-1 flex h-8 w-8 items-center justify-center rounded-full ${task.done ? "bg-[#2f7b6f] text-white" : "bg-white text-[#bf4b3a]"}`}>
+                <CheckCircle2 className="h-4 w-4" />
               </div>
-            )}
-
-            {/* My Classes Tab */}
-            {activeTab === "classes" && (
-              <div className="space-y-4">
-                <h2 className="font-serif text-2xl font-bold text-secondary">My Classes</h2>
-                {enrollmentsLoading ? (
-                  <div className="space-y-3">{[1, 2].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
-                ) : enrollments && enrollments.length > 0 ? (
-                  enrollments.map((e) => (
-                    <Card key={e.id} data-testid={`enrollment-card-${e.id}`}>
-                      <CardContent className="pt-5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h3 className="font-semibold text-secondary">{e.class.name}</h3>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5" />{e.class.scheduleDay} {e.class.scheduleTime}</span>
-                              <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{e.class.location}</span>
-                              <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{e.class.instructor}</span>
-                            </div>
-                          </div>
-                          <Badge className="bg-green-100 text-green-800 border-green-200 shrink-0 capitalize">{e.status}</Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <CalendarDays className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-muted-foreground">No classes enrolled yet.</p>
-                    </CardContent>
-                  </Card>
-                )}
+              <div>
+                <h3 className="font-serif text-xl font-bold">{task.title}</h3>
+                <p className="mt-1 text-sm leading-6 text-[#665d6d]">{task.body}</p>
               </div>
-            )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-            {/* Practice Videos Tab */}
-            {activeTab === "videos" && (
-              <div className="space-y-4">
-                <h2 className="font-serif text-2xl font-bold text-secondary">Practice Videos</h2>
-                {videos && videos.length > 0 ? (
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    {videos.map((v) => (
-                      <Card key={v.id} data-testid={`video-card-${v.id}`}>
-                        <CardContent className="pt-5">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                              <Video className="w-5 h-5 text-primary" />
-                            </div>
-                            <div className="min-w-0">
-                              <h3 className="font-semibold text-secondary text-sm">{v.title}</h3>
-                              {v.className && <p className="text-xs text-primary mt-0.5">{v.className}</p>}
-                              {v.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{v.description}</p>}
-                              <a
-                                href={v.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                data-testid={`video-link-${v.id}`}
-                                className="inline-flex items-center gap-1 text-xs text-primary font-semibold mt-2 hover:underline"
-                              >
-                                Watch Video
-                              </a>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <Video className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-muted-foreground">No videos uploaded yet.</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
+function ClassesView() {
+  return (
+    <div>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#bf4b3a]">Classes</p>
+          <h2 className="mt-2 font-serif text-4xl font-bold">Offers students can actually understand.</h2>
+        </div>
+        <Button className="w-fit rounded-full bg-[#bf4b3a]">Add class</Button>
+      </div>
+      <div className="mt-6 grid gap-4">
+        {classes.map((item) => (
+          <div key={item.title} className="grid gap-4 rounded-2xl border border-[#eee3dc] bg-[#fbf7f2] p-5 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <Badge variant="outline">{item.tag}</Badge>
+              <h3 className="mt-3 font-serif text-2xl font-bold">{item.title}</h3>
+              <p className="mt-1 text-sm text-[#665d6d]">{item.note}</p>
+            </div>
+            <Badge className={`${item.status === "Live" ? "bg-[#2f7b6f]" : item.status === "Review" ? "bg-[#bf4b3a]" : "bg-[#18131d]"} text-white`}>
+              {item.status}
+            </Badge>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-            {/* Showcase Hub Tab */}
-            {activeTab === "showcase" && (
-              <div className="space-y-4">
-                <h2 className="font-serif text-2xl font-bold text-secondary">Showcase Hub</h2>
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Star className="w-6 h-6 text-accent" />
-                      <h3 className="font-semibold text-secondary text-lg">Spring 2026 Showcase</h3>
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="rounded-xl p-4" style={{ background: "linear-gradient(135deg, #3a1f3a15, #c0185a10)" }}>
-                        <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1">Costume Theme</p>
-                        <p className="font-semibold text-secondary">Black + Gold</p>
-                        <p className="text-sm text-muted-foreground mt-1">Finalized — details shared in portal messages</p>
-                      </div>
-                      <div className="rounded-xl p-4" style={{ background: "linear-gradient(135deg, #c98b2f15, #c0185a10)" }}>
-                        <p className="text-xs font-bold uppercase tracking-widest text-accent mb-1">Next Run-Through</p>
-                        <p className="font-semibold text-secondary">This Sunday</p>
-                        <p className="text-sm text-muted-foreground mt-1">Review chorus video before rehearsal — bring sneakers</p>
-                      </div>
-                    </div>
-                    <div className="rounded-xl border p-4 mt-2">
-                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Showcase Timeline</p>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between"><span>Registration closes</span><span className="font-semibold text-secondary">July 12</span></div>
-                        <div className="flex justify-between"><span>Costume fittings</span><span className="font-semibold text-secondary">July 20–25</span></div>
-                        <div className="flex justify-between"><span>Dress rehearsal</span><span className="font-semibold text-secondary">Aug 10</span></div>
-                        <div className="flex justify-between"><span>Performance night</span><span className="font-semibold text-secondary">Aug 17</span></div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+function StudentsView() {
+  return (
+    <div>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#bf4b3a]">Students</p>
+          <h2 className="mt-2 font-serif text-4xl font-bold">Every registration becomes a useful record.</h2>
+        </div>
+        <Button variant="outline" className="w-fit rounded-full">Export CSV</Button>
+      </div>
+      <div className="mt-6 space-y-3">
+        {students.map((student) => (
+          <div key={student.name} className="grid grid-cols-[44px_1fr_auto] items-center gap-4 rounded-2xl bg-[#fbf7f2] p-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#18131d] text-sm font-bold text-white">
+              {student.name.split(" ").map((part) => part[0]).join("")}
+            </div>
+            <div>
+              <h3 className="font-bold">{student.name}</h3>
+              <p className="text-sm text-[#665d6d]">{student.className}</p>
+            </div>
+            <Badge className={`${student.status === "Paid" ? "bg-[#2f7b6f]" : "bg-[#bf4b3a]"} text-white`}>
+              {student.status}
+            </Badge>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-            {/* Receipts Tab */}
-            {activeTab === "receipts" && (
-              <div className="space-y-4">
-                <h2 className="font-serif text-2xl font-bold text-secondary">Receipts</h2>
-                {enrollmentsLoading ? (
-                  <div className="space-y-3">{[1, 2].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>
-                ) : enrollments && enrollments.length > 0 ? (
-                  enrollments.map((e) => (
-                    <Card key={e.id} data-testid={`receipt-card-${e.id}`}>
-                      <CardContent className="pt-5">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-semibold text-secondary">{e.class.name}</h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">
-                              {e.class.location} · Enrolled {new Date(e.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-lg text-secondary">${e.class.price}</p>
-                            <p className="text-xs text-muted-foreground">{e.class.pricePeriod}</p>
-                            <Badge className="mt-1 bg-green-100 text-green-800 border-green-200 text-xs capitalize">{e.status}</Badge>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <Receipt className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-muted-foreground">No receipts yet.</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
-          </main>
+function PaymentsView() {
+  return (
+    <div>
+      <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#bf4b3a]">Payments</p>
+      <h2 className="mt-2 font-serif text-4xl font-bold">No more wondering who paid.</h2>
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        {[
+          { title: "Received", value: "$2,840", body: "Confirmed payments from live classes." },
+          { title: "Pending", value: "$540", body: "Students who need follow-up." },
+          { title: "Waived", value: "$180", body: "Scholarship or comped registrations." },
+        ].map((item) => (
+          <div key={item.title} className="rounded-2xl border border-[#eee3dc] bg-[#fbf7f2] p-5">
+            <p className="text-sm font-bold text-[#665d6d]">{item.title}</p>
+            <p className="mt-3 font-serif text-4xl font-bold">{item.value}</p>
+            <p className="mt-2 text-sm leading-6 text-[#665d6d]">{item.body}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 rounded-2xl bg-[#18131d] p-5 text-white">
+        <div className="flex items-start gap-3">
+          <Mail className="mt-1 h-5 w-5 text-white/60" />
+          <div>
+            <h3 className="font-serif text-2xl font-bold">Follow-up email ready</h3>
+            <p className="mt-1 text-sm leading-6 text-white/65">Send payment reminders without leaving the class workflow.</p>
+          </div>
         </div>
       </div>
     </div>
