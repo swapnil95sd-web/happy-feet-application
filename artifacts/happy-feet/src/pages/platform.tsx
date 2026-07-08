@@ -114,7 +114,7 @@ export default function PlatformAdmin() {
     <div className="min-h-screen bg-background">
       <section className="px-4 py-10" style={{ background: "radial-gradient(circle at 20% 0, rgba(58,31,58,.08), transparent 40%)" }}>
         <div className="container mx-auto max-w-6xl">
-          <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-primary">StudioFlow Platform</p>
+          <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-primary">Beyond8 Platform</p>
           <h1 className="font-serif text-4xl font-bold text-secondary">Platform Admin</h1>
           <p className="mt-1 text-muted-foreground">Create studios, assign owners, and monitor client health from one place.</p>
         </div>

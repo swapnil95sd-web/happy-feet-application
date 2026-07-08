@@ -54,7 +54,7 @@ export default function Portal() {
           <div className="rounded-[34px] bg-[#18131d] p-6 text-white shadow-2xl md:p-8">
             <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
               <div>
-                <Badge className="mb-5 bg-white/12 text-white">StudioFlow Portal</Badge>
+                <Badge className="mb-5 bg-white/12 text-white">Beyond8 Portal</Badge>
                 <h1 className="font-serif text-4xl font-bold leading-tight md:text-6xl">
                   Welcome, {displayName}.
                 </h1>

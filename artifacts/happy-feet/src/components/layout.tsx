@@ -51,7 +51,7 @@ export function Navigation() {
     { type: "link", label: "About Us", href: "/about" },
   ];
 
-  const displayName = profile?.fullName ?? user?.email ?? "StudioFlow user";
+  const displayName = profile?.fullName ?? user?.email ?? "Beyond8 user";
   const initials = displayName
     ? displayName
         .split(/\s|@/)

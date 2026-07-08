@@ -10,7 +10,6 @@ import {
   MessageSquareText,
   MousePointerClick,
   PlayCircle,
-  Sparkles,
   Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +22,7 @@ const stories = {
     label: "Instructor",
     headline: "Teach more. Chase fewer messages.",
     pain: "Before class day, you are checking DMs, payment screenshots, class lists, and who still needs the address.",
-    promise: "StudioFlow gives instructors one place to publish classes, collect requests, see rosters, and follow up.",
+    promise: "Beyond8 gives instructors one place to publish classes, collect requests, see rosters, and follow up.",
     image: "https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&w=900&q=85",
     color: "#2f7b6f",
     soft: "#e8f4ef",
@@ -43,7 +42,7 @@ const stories = {
     label: "Student",
     headline: "Know what to book and what happens next.",
     pain: "Students often need to ask where class is, what level it is, how much it costs, and how to pay.",
-    promise: "Each class page makes the schedule, level, price, and next steps simple before they register.",
+    promise: "Each Beyond8 class page makes the schedule, level, price, and next steps simple before they register.",
     image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=85",
     color: "#bf4b3a",
     soft: "#fff0e9",
@@ -63,7 +62,7 @@ const stories = {
     label: "Parent / learner",
     headline: "Keep families and learners clear after they register.",
     pain: "Parents and learners need reminders, receipts, class info, practice links, and updates in one reliable place.",
-    promise: "StudioFlow keeps class details, messages, payment status, and learning resources easy to find.",
+    promise: "Beyond8 keeps class details, messages, payment status, and learning resources easy to find.",
     image: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=900&q=85",
     color: "#7c5cff",
     soft: "#f0edff",
@@ -104,6 +103,12 @@ const flow = [
   { icon: ClipboardList, title: "Manage the room", body: "Registrations, notes, payments, and exports are ready before class starts." },
 ];
 
+const heroBenefits = [
+  "Publish classes and workshops",
+  "Collect student registrations",
+  "Track payments, rosters, and follow-up",
+];
+
 export default function TryProduct() {
   const [activeStory, setActiveStory] = useState<StoryKey>("instructor");
   const selected = stories[activeStory];
@@ -123,20 +128,25 @@ export default function TryProduct() {
 
         <div className="relative mx-auto grid min-h-[84vh] max-w-7xl gap-10 px-4 py-14 md:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
           <div className="max-w-2xl text-white">
-            <Badge className="mb-5 border-white/20 bg-white/12 text-white backdrop-blur">
-              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-              StudioFlow product preview
-            </Badge>
+            <Beyond8Logo variant="light" />
             <h1 className="font-serif text-5xl font-bold leading-[1.02] md:text-7xl">
-              Run your classes from one beautiful workspace.
+              You handle the counts. Beyond8 handles the rest.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-7 text-white/80 md:text-lg">
-              StudioFlow helps instructors publish classes, collect registrations, track payments,
-              manage student lists, and keep learners informed before and after class.
+              A beautiful class hub for instructors to publish offers, register students,
+              track payments, organize rosters, and keep learners informed from first click to final rehearsal.
             </p>
+            <div className="mt-6 grid gap-2 sm:grid-cols-3">
+              {heroBenefits.map((item) => (
+                <div key={item} className="rounded-2xl border border-white/14 bg-white/10 p-3 backdrop-blur">
+                  <CheckCircle2 className="h-4 w-4 text-white/72" />
+                  <p className="mt-2 text-sm font-semibold leading-5 text-white">{item}</p>
+                </div>
+              ))}
+            </div>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="rounded-full bg-white px-8 text-[#18131d] shadow-xl hover:bg-white/90">
-                <a href="/portal">Try it now <ArrowRight className="ml-2 h-4 w-4" /></a>
+                <a href="/portal">Try Beyond8 now <ArrowRight className="ml-2 h-4 w-4" /></a>
               </Button>
               <Button
                 size="lg"
@@ -165,7 +175,7 @@ export default function TryProduct() {
               Instructors, students, and families stay aligned from booking to class day.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#665d6d]">
-              StudioFlow connects booking pages, class rosters, student records, payment follow-up,
+              Beyond8 connects booking pages, class rosters, student records, payment follow-up,
               and learner updates into one smooth workflow.
             </p>
           </div>
@@ -248,6 +258,25 @@ export default function TryProduct() {
   );
 }
 
+function Beyond8Logo({ variant = "dark" }: { variant?: "dark" | "light" }) {
+  const light = variant === "light";
+  return (
+    <div className="mb-6 flex items-center gap-3">
+      <div className={`relative flex h-12 w-12 items-center justify-center rounded-2xl ${light ? "bg-white text-[#18131d]" : "bg-[#18131d] text-white"} shadow-xl`}>
+        <span className="font-serif text-2xl font-black leading-none">8</span>
+        <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#bf4b3a]" />
+        <span className="absolute bottom-2 left-2 h-2 w-2 rounded-full bg-[#2f7b6f]" />
+      </div>
+      <div>
+        <p className={`font-serif text-2xl font-bold leading-none ${light ? "text-white" : "text-[#18131d]"}`}>Beyond8</p>
+        <p className={`mt-1 text-xs font-bold uppercase tracking-[0.18em] ${light ? "text-white/58" : "text-[#7a707f]"}`}>
+          Class flow for instructors
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function ProductPoster({ selected }: { selected: typeof stories[StoryKey] }) {
   return (
     <div className="overflow-hidden rounded-[24px] bg-white">
@@ -294,7 +323,7 @@ function PersonaShowcase({ selected }: { selected: typeof stories[StoryKey] }) {
                 <p className="mt-2 text-sm leading-6 text-white/80">{selected.pain}</p>
               </div>
               <div className="rounded-2xl bg-white p-4 text-[#18131d]">
-                <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: selected.color }}>With StudioFlow</p>
+                <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: selected.color }}>With Beyond8</p>
                 <p className="mt-2 text-sm leading-6 text-[#4f4656]">{selected.promise}</p>
               </div>
             </div>
@@ -366,7 +395,7 @@ function FloatingCta() {
     <div className="fixed bottom-4 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-full border border-white/60 bg-white/92 p-2 shadow-2xl backdrop-blur md:bottom-6">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 pl-3">
-          <p className="truncate text-sm font-bold text-[#18131d]">Ready to try StudioFlow?</p>
+          <p className="truncate text-sm font-bold text-[#18131d]">Ready to try Beyond8?</p>
           <p className="truncate text-xs text-[#6c6373]">Create account, then enter the portal</p>
         </div>
         <Button asChild className="shrink-0 rounded-full bg-[#18131d] px-5 text-white hover:bg-[#2a2232]">

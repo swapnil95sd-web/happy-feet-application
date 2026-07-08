@@ -86,7 +86,7 @@ function SignInPanel({ isSupabaseConfigured }: { isSupabaseConfigured: boolean }
         <div className="text-center mb-5">
           <h2 className="font-serif text-2xl font-bold text-foreground mb-2">Create account or sign in</h2>
           <p className="text-muted-foreground text-sm">
-            Enter your email and we will send a secure magic link to open your StudioFlow workspace.
+            Enter your email and we will send a secure magic link to open your Beyond8 workspace.
           </p>
         </div>
         {!isSupabaseConfigured ? (
