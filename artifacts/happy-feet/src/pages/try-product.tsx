@@ -27,7 +27,17 @@ const stories = {
     image: "https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&w=900&q=85",
     color: "#2f7b6f",
     soft: "#e8f4ef",
+    toolTitle: "Owner command center",
+    toolSubtitle: "A launch-ready view of classes, payments, and what needs attention.",
+    visualTitle: "Tonight's studio health",
+    visualNote: "Two payments need follow-up before the showcase rehearsal.",
+    proof: ["Class page is live", "Roster is export-ready", "Payment follow-up is visible"],
     moments: ["Publish a class", "See who registered", "Mark payment received", "Export the roster"],
+    previewRows: [
+      ["Spring Showcase Team", "24 registered", "4 pending"],
+      ["Kids Bollywood Basics", "14 registered", "Almost full"],
+      ["Private Coaching", "3 requests", "Needs reply"],
+    ],
   },
   instructor: {
     label: "Instructor",
@@ -37,7 +47,17 @@ const stories = {
     image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=85",
     color: "#bf4b3a",
     soft: "#fff0e9",
+    toolTitle: "Instructor class room",
+    toolSubtitle: "A focused roster with notes, check-in context, and the next rehearsal plan.",
+    visualTitle: "Before class starts",
+    visualNote: "Review student notes and send a reminder without asking admin.",
+    proof: ["Roster opens in one tap", "Student notes are attached", "Reminder is queued"],
     moments: ["Open today’s roster", "Review notes", "Send a reminder", "Prepare check-in"],
+    previewRows: [
+      ["Maya Shah", "Paid", "Needs front-row spacing"],
+      ["Ari Patel", "Pending", "Parent asked about costume"],
+      ["Neha Rao", "Paid", "Confident with chorus"],
+    ],
   },
   student: {
     label: "Student",
@@ -47,7 +67,17 @@ const stories = {
     image: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=900&q=85",
     color: "#7c5cff",
     soft: "#f0edff",
+    toolTitle: "Student booking flow",
+    toolSubtitle: "A polished public page where a dancer can choose, register, and know what happens next.",
+    visualTitle: "Registration without confusion",
+    visualNote: "The student sees level, price, location, and payment guidance before submitting.",
+    proof: ["Class details are clear", "Request is captured", "Next steps are sent"],
     moments: ["Find the right class", "Register quickly", "Receive next steps", "Stay connected"],
+    previewRows: [
+      ["Bollywood Beginner", "Sat 11:00 AM", "$25 drop-in"],
+      ["Kids Showcase Team", "Sun 10:00 AM", "$180 batch"],
+      ["BollyHop Lab", "Thu 7:30 PM", "$95 program"],
+    ],
   },
 } satisfies Record<StoryKey, {
   label: string;
@@ -57,7 +87,13 @@ const stories = {
   image: string;
   color: string;
   soft: string;
+  toolTitle: string;
+  toolSubtitle: string;
+  visualTitle: string;
+  visualNote: string;
+  proof: string[];
   moments: string[];
+  previewRows: string[][];
 }>;
 
 const storyOrder: StoryKey[] = ["owner", "instructor", "student"];
@@ -66,12 +102,6 @@ const flow = [
   { icon: ImagePlus, title: "Create the offer", body: "Add the class, image, price, schedule, instructor, and details in a few minutes." },
   { icon: MousePointerClick, title: "Share one link", body: "Students see a polished page instead of a loose collection of posts and messages." },
   { icon: ClipboardList, title: "Manage the room", body: "Registrations, notes, payments, and exports are ready before class starts." },
-];
-
-const portalPreview = [
-  { label: "Today", value: "Showcase Team", note: "Roster ready for check-in" },
-  { label: "Needs attention", value: "Payment follow-up", note: "Two students pending" },
-  { label: "Next move", value: "Send reminder", note: "Queued for tomorrow morning" },
 ];
 
 export default function TryProduct() {
@@ -129,16 +159,14 @@ export default function TryProduct() {
 
       <section id="story" className="px-4 py-16 md:px-6">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-8 grid gap-5 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#bf4b3a]">Choose the point of view</p>
-              <h2 className="mt-3 font-serif text-4xl font-bold leading-tight md:text-6xl">
-                Make the product obvious in one click.
-              </h2>
-            </div>
-            <p className="max-w-2xl text-base leading-7 text-[#665d6d]">
-              Instead of asking prospects to decode features, StudioFlow tells their daily story:
-              what feels messy, what becomes simple, and where they go next.
+          <div className="mx-auto mb-9 max-w-4xl text-center">
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#bf4b3a]">Choose the point of view</p>
+            <h2 className="mt-3 font-serif text-4xl font-bold leading-tight md:text-6xl">
+              Make each person instantly understand what changes for them.
+            </h2>
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#665d6d]">
+              Click a role and the story, image, and tool preview all change. Owners see control,
+              instructors see readiness, and students see an easy path to book.
             </p>
           </div>
 
@@ -163,10 +191,7 @@ export default function TryProduct() {
             })}
           </div>
 
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1fr]">
-            <StoryPanel selected={selected} />
-            <PortalPreview selected={selected} />
-          </div>
+          <PersonaShowcase selected={selected} />
         </div>
       </section>
 
@@ -229,60 +254,89 @@ function ProductPoster({ selected }: { selected: typeof stories[StoryKey] }) {
   );
 }
 
-function StoryPanel({ selected }: { selected: typeof stories[StoryKey] }) {
+function PersonaShowcase({ selected }: { selected: typeof stories[StoryKey] }) {
   return (
-    <div className="rounded-[30px] border border-[#e6ddd5] bg-white p-6 shadow-sm md:p-8">
-      <div className="grid gap-5 md:grid-cols-[180px_1fr]">
-        <img src={selected.image} alt="" className="h-56 w-full rounded-[24px] object-cover md:h-full" />
-        <div>
-          <Badge className="mb-4 text-white" style={{ background: selected.color }}>{selected.label}</Badge>
-          <h3 className="font-serif text-3xl font-bold leading-tight">{selected.headline}</h3>
-          <div className="mt-5 grid gap-3">
-            <div className="rounded-2xl bg-[#fbf6f1] p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#bf4b3a]">Before</p>
-              <p className="mt-2 text-sm leading-6 text-[#665d6d]">{selected.pain}</p>
-            </div>
-            <div className="rounded-2xl p-4" style={{ background: selected.soft }}>
-              <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: selected.color }}>With StudioFlow</p>
-              <p className="mt-2 text-sm leading-6 text-[#3d3544]">{selected.promise}</p>
+    <div className="mt-8 overflow-hidden rounded-[36px] border border-[#e6ddd5] bg-white shadow-xl">
+      <div className="grid lg:grid-cols-[0.92fr_1.08fr]">
+        <div className="relative min-h-[520px] overflow-hidden">
+          <img src={selected.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(24,19,29,.92),rgba(24,19,29,.32)_52%,transparent)]" />
+          <div className="absolute left-5 right-5 top-5 flex items-center justify-between gap-3">
+            <Badge className="text-white" style={{ background: selected.color }}>{selected.label}</Badge>
+            <div className="rounded-full bg-white/16 px-3 py-1 text-xs font-bold text-white backdrop-blur">Live preview</div>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7">
+            <h3 className="max-w-xl font-serif text-4xl font-bold leading-tight text-white md:text-5xl">
+              {selected.headline}
+            </h3>
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              <div className="rounded-2xl bg-white/12 p-4 text-white backdrop-blur">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/56">Before</p>
+                <p className="mt-2 text-sm leading-6 text-white/80">{selected.pain}</p>
+              </div>
+              <div className="rounded-2xl bg-white p-4 text-[#18131d]">
+                <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: selected.color }}>With StudioFlow</p>
+                <p className="mt-2 text-sm leading-6 text-[#4f4656]">{selected.promise}</p>
+              </div>
             </div>
           </div>
+        </div>
+
+        <div className="p-5 md:p-7">
+          <ToolPreview selected={selected} />
         </div>
       </div>
     </div>
   );
 }
 
-function PortalPreview({ selected }: { selected: typeof stories[StoryKey] }) {
+function ToolPreview({ selected }: { selected: typeof stories[StoryKey] }) {
   return (
-    <div className="rounded-[30px] border border-[#e6ddd5] bg-[#18131d] p-5 text-white shadow-xl md:p-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-[0.16em] text-white/45">Portal preview</p>
-          <h3 className="mt-2 font-serif text-3xl font-bold">Your next best action is clear.</h3>
-        </div>
-        <div className="hidden h-14 w-14 items-center justify-center rounded-full bg-white/10 md:flex">
-          <CheckCircle2 className="h-6 w-6" style={{ color: selected.color }} />
-        </div>
+    <div className="flex h-full flex-col">
+      <div className="rounded-[28px] p-5" style={{ background: selected.soft }}>
+        <p className="text-sm font-bold uppercase tracking-[0.16em]" style={{ color: selected.color }}>{selected.toolTitle}</p>
+        <h3 className="mt-3 font-serif text-4xl font-bold leading-tight text-[#18131d]">{selected.visualTitle}</h3>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-[#5f5667]">{selected.toolSubtitle}</p>
       </div>
-      <div className="mt-6 space-y-3">
-        {portalPreview.map((item, index) => (
-          <div key={item.label} className="rounded-2xl border border-white/10 bg-white/8 p-4">
-            <div className="flex items-start gap-3">
-              <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold" style={{ background: index === 0 ? selected.color : "rgba(255,255,255,.12)" }}>
+
+      <div className="mt-5 rounded-[28px] border border-[#e8ded6] bg-[#fbf7f1] p-4">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#8b808f]">Workspace snapshot</p>
+            <p className="mt-1 text-sm font-semibold text-[#18131d]">{selected.visualNote}</p>
+          </div>
+          <div className="flex h-11 w-11 items-center justify-center rounded-full text-white" style={{ background: selected.color }}>
+            <CheckCircle2 className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {selected.previewRows.map(([primary, secondary, status], index) => (
+            <div key={`${primary}-${status}`} className="grid grid-cols-[36px_1fr_auto] items-center gap-3 rounded-2xl bg-white p-3 shadow-sm">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: index === 0 ? selected.color : "#18131d" }}>
                 {index + 1}
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/45">{item.label}</p>
-                <p className="mt-1 font-serif text-xl font-bold">{item.value}</p>
-                <p className="mt-1 text-sm text-white/62">{item.note}</p>
+                <p className="text-sm font-bold text-[#18131d]">{primary}</p>
+                <p className="text-xs text-[#746a7a]">{secondary}</p>
               </div>
+              <p className="rounded-full px-3 py-1 text-xs font-bold" style={{ background: selected.soft, color: selected.color }}>{status}</p>
             </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        {selected.proof.map((item) => (
+          <div key={item} className="rounded-2xl border border-[#e8ded6] bg-white p-4">
+            <CheckCircle2 className="h-4 w-4" style={{ color: selected.color }} />
+            <p className="mt-3 text-sm font-bold leading-5 text-[#18131d]">{item}</p>
           </div>
         ))}
       </div>
-      <Button asChild className="mt-6 w-full rounded-full text-white" style={{ background: selected.color }}>
-        <a href="/portal">Enter portal <ArrowRight className="ml-2 h-4 w-4" /></a>
+
+      <Button asChild className="mt-5 w-full rounded-full text-white" style={{ background: selected.color }}>
+        <a href="/portal">Try this workspace <ArrowRight className="ml-2 h-4 w-4" /></a>
       </Button>
     </div>
   );
