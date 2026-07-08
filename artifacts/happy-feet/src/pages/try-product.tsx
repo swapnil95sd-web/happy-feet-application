@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   ArrowRight,
+  BellRing,
   CalendarCheck2,
   CheckCircle2,
   ClipboardList,
@@ -122,9 +123,23 @@ export default function TryProduct() {
         <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-[#fff0e6] blur-3xl" />
         <div className="absolute right-10 top-16 h-56 w-56 rounded-full bg-[#ff6b3d]/20 blur-3xl" />
 
-        <div className="relative mx-auto grid min-h-[86vh] max-w-7xl gap-10 px-4 py-10 md:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+        <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 md:px-6">
+          <Beyond8Logo compact />
+          <nav className="hidden items-center gap-2 rounded-full border border-white/60 bg-white/82 p-1.5 text-sm font-semibold text-[#28123d]/72 shadow-lg backdrop-blur md:flex">
+            <button onClick={() => document.getElementById("story")?.scrollIntoView({ behavior: "smooth" })} className="px-3 transition hover:text-[#c2185b]">
+              What it does
+            </button>
+            <button onClick={() => document.getElementById("story")?.scrollIntoView({ behavior: "smooth" })} className="px-3 transition hover:text-[#c2185b]">
+              For instructors
+            </button>
+            <a href="/portal" className="rounded-full bg-[#28123d] px-5 py-2 text-white shadow-lg transition hover:bg-[#3a1c54]">
+              Open portal
+            </a>
+          </nav>
+        </header>
+
+        <div className="relative mx-auto grid min-h-[calc(86vh-88px)] max-w-7xl gap-10 px-4 pb-12 pt-4 md:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
           <div className="max-w-2xl">
-            <Beyond8Logo />
             <div className="mb-6 h-px w-16 bg-[#c2185b]" />
             <p className="mb-4 text-sm font-bold uppercase tracking-[0.22em] text-[#c2185b]">Beyond the 8 counts</p>
             <h1 className="font-serif text-5xl font-bold leading-[1.02] text-[#28123d] md:text-7xl">
@@ -159,18 +174,7 @@ export default function TryProduct() {
           </div>
 
           <div className="relative">
-            <div className="grid gap-4 lg:grid-cols-[0.82fr_1fr] lg:items-center">
-              <div className="overflow-hidden rounded-[30px] border border-white/10 bg-[#28123d] p-4 shadow-2xl">
-                <img
-                  src="/brand/beyond8-primary-logo.webp"
-                  alt="BeyondEight logo"
-                  className="w-full rounded-[22px] object-cover"
-                />
-              </div>
-              <div className="rounded-[30px] border border-[#eaded5] bg-white p-4 shadow-2xl">
-                <ProductPoster selected={selected} compact />
-              </div>
-            </div>
+            <HeroProductPreview selected={selected} />
           </div>
         </div>
       </section>
@@ -266,15 +270,90 @@ export default function TryProduct() {
   );
 }
 
-function Beyond8Logo() {
+function Beyond8Logo({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="mb-6 flex items-center gap-3">
-      <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-[#28123d] shadow-xl">
+    <div className={`${compact ? "" : "mb-6"} flex items-center gap-3`}>
+      <div className={`${compact ? "h-12 w-12 rounded-[18px]" : "h-14 w-14 rounded-2xl"} flex items-center justify-center overflow-hidden bg-[#28123d] shadow-xl`}>
         <img src="/brand/beyond8-icon-gradient.webp" alt="" className="h-full w-full object-cover" />
       </div>
       <div>
-        <img src="/brand/beyond8-wordmark.webp" alt="BeyondEight" className="h-9 w-auto object-contain" />
-        <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-[#28123d]/58">Beyond the 8 counts</p>
+        <img src="/brand/beyond8-wordmark.webp" alt="BeyondEight" className={`${compact ? "h-7" : "h-9"} w-auto object-contain`} />
+        <p className={`${compact ? "text-[10px]" : "text-xs"} mt-1 font-bold uppercase tracking-[0.18em] text-[#28123d]/58`}>Beyond the 8 counts</p>
+      </div>
+    </div>
+  );
+}
+
+function HeroProductPreview({ selected }: { selected: typeof stories[StoryKey] }) {
+  return (
+    <div className="relative">
+      <div className="absolute -left-10 top-8 hidden rounded-[28px] border border-white/10 bg-[#28123d] p-3 shadow-2xl xl:block">
+        <img src="/brand/beyond8-primary-logo.webp" alt="BeyondEight logo" className="h-56 w-60 rounded-[20px] object-cover" />
+      </div>
+
+      <div className="ml-auto max-w-[720px] rounded-[34px] border border-white/12 bg-[#fff8f0] p-4 shadow-2xl lg:p-5">
+        <div className="overflow-hidden rounded-[26px] border border-[#eaded5] bg-white">
+          <div className="grid lg:grid-cols-[0.95fr_1.05fr]">
+            <div className="relative min-h-[420px] overflow-hidden bg-[#28123d]">
+              <img src={selected.image} alt="" className="absolute inset-0 h-full w-full object-cover opacity-72" />
+              <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(40,18,61,.96),rgba(40,18,61,.34)_62%,transparent)]" />
+              <div className="absolute left-5 top-5">
+                <img src="/brand/beyond8-icon-gradient.webp" alt="" className="h-14 w-14 rounded-2xl shadow-xl" />
+              </div>
+              <div className="absolute bottom-5 left-5 right-5 text-white">
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/58">Live class page</p>
+                <h3 className="mt-2 font-serif text-4xl font-bold leading-tight">Spring Showcase Team</h3>
+                <div className="mt-5 grid gap-2 text-sm font-semibold sm:grid-cols-2">
+                  <div className="rounded-2xl bg-white/12 p-3 backdrop-blur">Mon 7:00 PM</div>
+                  <div className="rounded-2xl bg-white/12 p-3 backdrop-blur">24 students</div>
+                  <div className="rounded-2xl bg-white/12 p-3 backdrop-blur">$350 program</div>
+                  <div className="rounded-2xl bg-white/12 p-3 backdrop-blur">4 pending</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#c2185b]">Instructor dashboard</p>
+                  <h3 className="mt-2 font-serif text-3xl font-bold leading-tight text-[#28123d]">Everything beyond the choreography.</h3>
+                </div>
+                <div className="rounded-full bg-[#e8f4ef] px-3 py-1 text-xs font-bold text-[#2f7b6f]">Ready</div>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                {[
+                  { icon: ImagePlus, title: "Class offer", body: "Public page, photo, schedule, price, and capacity are live." },
+                  { icon: Users, title: "Student list", body: "Roster, notes, and payment status are ready before class." },
+                  { icon: BellRing, title: "Follow-up", body: "Reminders and payment nudges stay connected to the class." },
+                ].map(({ icon: Icon, title, body }) => (
+                  <div key={title} className="grid grid-cols-[42px_1fr] gap-3 rounded-2xl bg-[#fff4eb] p-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#28123d] text-white">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-[#28123d]">{title}</p>
+                      <p className="mt-0.5 text-xs leading-5 text-[#6c5f72]">{body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-[#eaded5] bg-[#fbf7f1] p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-sm font-bold text-[#28123d]">Today's next move</p>
+                  <CreditCard className="h-4 w-4 text-[#c2185b]" />
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-[#eaded5]">
+                  <div className="h-full w-[76%] rounded-full bg-[linear-gradient(90deg,#c2185b,#ff6b3d,#ffb26b)]" />
+                </div>
+                <p className="mt-3 text-sm leading-6 text-[#6c5f72]">
+                  20 payments confirmed. 4 students need a reminder before rehearsal.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -395,7 +474,7 @@ function ToolPreview({ selected }: { selected: typeof stories[StoryKey] }) {
 
 function FloatingCta() {
   return (
-    <div className="fixed bottom-4 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-full border border-white/60 bg-white/92 p-2 shadow-2xl backdrop-blur md:bottom-6">
+    <div className="fixed bottom-4 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-full border border-white/60 bg-white/92 p-2 shadow-2xl backdrop-blur md:bottom-6 md:left-auto md:right-6 md:max-w-sm md:translate-x-0">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 pl-3">
           <p className="truncate text-sm font-bold text-[#18131d]">Ready to try Beyond8?</p>

@@ -151,18 +151,27 @@ function Router() {
   );
 }
 
+function AppContent() {
+  const [location] = useLocation();
+  const isBeyond8Landing = location === "/try";
+
+  return (
+    <div className="min-h-[100dvh] flex flex-col">
+      {!isBeyond8Landing && <Navigation />}
+      <main className="flex-1">
+        <Router />
+      </main>
+    </div>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <div className="min-h-[100dvh] flex flex-col">
-              <Navigation />
-              <main className="flex-1">
-                <Router />
-              </main>
-            </div>
+            <AppContent />
           </WouterRouter>
         </AuthProvider>
         <Toaster />
