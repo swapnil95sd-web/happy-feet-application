@@ -117,41 +117,40 @@ export default function TryProduct() {
     <div className="min-h-screen bg-[#fbf7f1] text-[#18131d]">
       <FloatingCta />
 
-      <section className="relative overflow-hidden">
-        <img
-          src="https://images.unsplash.com/photo-1504609813442-a8924e83f76e?auto=format&fit=crop&w=1800&q=85"
-          alt="Dance class in motion"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(12,9,16,.94),rgba(34,25,43,.86)_52%,rgba(191,75,58,.44))]" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(to_top,#fbf7f1,transparent)]" />
+      <section className="relative overflow-hidden bg-[#fff4eb]">
+        <div className="absolute inset-y-0 right-0 hidden w-[42%] bg-[#28123d] lg:block" />
+        <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-[#fff0e6] blur-3xl" />
+        <div className="absolute right-10 top-16 h-56 w-56 rounded-full bg-[#ff6b3d]/20 blur-3xl" />
 
-        <div className="relative mx-auto grid min-h-[84vh] max-w-7xl gap-10 px-4 py-14 md:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
-          <div className="max-w-2xl text-white">
-            <Beyond8Logo variant="light" />
-            <h1 className="font-serif text-5xl font-bold leading-[1.02] md:text-7xl">
-              You handle the counts. Beyond8 handles the rest.
+        <div className="relative mx-auto grid min-h-[86vh] max-w-7xl gap-10 px-4 py-10 md:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+          <div className="max-w-2xl">
+            <Beyond8Logo />
+            <div className="mb-6 h-px w-16 bg-[#c2185b]" />
+            <p className="mb-4 text-sm font-bold uppercase tracking-[0.22em] text-[#c2185b]">Beyond the 8 counts</p>
+            <h1 className="font-serif text-5xl font-bold leading-[1.02] text-[#28123d] md:text-7xl">
+              You focus on the 8 counts.
+              <span className="block text-[#c2185b]">We handle everything beyond.</span>
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-7 text-white/80 md:text-lg">
-              A beautiful class hub for instructors to publish offers, register students,
-              track payments, organize rosters, and keep learners informed from first click to final rehearsal.
+            <p className="mt-5 max-w-xl text-base leading-7 text-[#28123d]/78 md:text-lg">
+              Beyond8 helps choreographers and instructors create class offers, manage registrations,
+              organize student lists, track payments, send reminders, and grow their class community.
             </p>
             <div className="mt-6 grid gap-2 sm:grid-cols-3">
               {heroBenefits.map((item) => (
-                <div key={item} className="rounded-2xl border border-white/14 bg-white/10 p-3 backdrop-blur">
-                  <CheckCircle2 className="h-4 w-4 text-white/72" />
-                  <p className="mt-2 text-sm font-semibold leading-5 text-white">{item}</p>
+                <div key={item} className="rounded-2xl border border-[#eaded5] bg-white p-3 shadow-sm">
+                  <CheckCircle2 className="h-4 w-4 text-[#c2185b]" />
+                  <p className="mt-2 text-sm font-semibold leading-5 text-[#28123d]">{item}</p>
                 </div>
               ))}
             </div>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" className="rounded-full bg-white px-8 text-[#18131d] shadow-xl hover:bg-white/90">
+              <Button asChild size="lg" className="rounded-full bg-[#28123d] px-8 text-white shadow-xl hover:bg-[#3a1c54]">
                 <a href="/portal">Try Beyond8 now <ArrowRight className="ml-2 h-4 w-4" /></a>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="rounded-full border-white/30 bg-white/10 px-8 text-white backdrop-blur hover:bg-white/18"
+                className="rounded-full border-[#c2185b]/30 bg-white px-8 text-[#28123d] hover:bg-[#fff0e6]"
                 onClick={() => document.getElementById("story")?.scrollIntoView({ behavior: "smooth" })}
               >
                 See how it works <PlayCircle className="ml-2 h-4 w-4" />
@@ -160,8 +159,17 @@ export default function TryProduct() {
           </div>
 
           <div className="relative">
-            <div className="rounded-[32px] border border-white/18 bg-white/88 p-3 shadow-2xl backdrop-blur-xl md:p-4">
-              <ProductPoster selected={selected} />
+            <div className="grid gap-4 lg:grid-cols-[0.82fr_1fr] lg:items-center">
+              <div className="overflow-hidden rounded-[30px] border border-white/10 bg-[#28123d] p-4 shadow-2xl">
+                <img
+                  src="/brand/beyond8-primary-logo.webp"
+                  alt="BeyondEight logo"
+                  className="w-full rounded-[22px] object-cover"
+                />
+              </div>
+              <div className="rounded-[30px] border border-[#eaded5] bg-white p-4 shadow-2xl">
+                <ProductPoster selected={selected} compact />
+              </div>
             </div>
           </div>
         </div>
@@ -258,38 +266,33 @@ export default function TryProduct() {
   );
 }
 
-function Beyond8Logo({ variant = "dark" }: { variant?: "dark" | "light" }) {
-  const light = variant === "light";
+function Beyond8Logo() {
   return (
     <div className="mb-6 flex items-center gap-3">
-      <div className={`relative flex h-12 w-12 items-center justify-center rounded-2xl ${light ? "bg-white text-[#18131d]" : "bg-[#18131d] text-white"} shadow-xl`}>
-        <span className="font-serif text-2xl font-black leading-none">8</span>
-        <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#bf4b3a]" />
-        <span className="absolute bottom-2 left-2 h-2 w-2 rounded-full bg-[#2f7b6f]" />
+      <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-[#28123d] shadow-xl">
+        <img src="/brand/beyond8-icon-gradient.webp" alt="" className="h-full w-full object-cover" />
       </div>
       <div>
-        <p className={`font-serif text-2xl font-bold leading-none ${light ? "text-white" : "text-[#18131d]"}`}>Beyond8</p>
-        <p className={`mt-1 text-xs font-bold uppercase tracking-[0.18em] ${light ? "text-white/58" : "text-[#7a707f]"}`}>
-          Class flow for instructors
-        </p>
+        <img src="/brand/beyond8-wordmark.webp" alt="BeyondEight" className="h-9 w-auto object-contain" />
+        <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-[#28123d]/58">Beyond the 8 counts</p>
       </div>
     </div>
   );
 }
 
-function ProductPoster({ selected }: { selected: typeof stories[StoryKey] }) {
+function ProductPoster({ selected, compact = false }: { selected: typeof stories[StoryKey]; compact?: boolean }) {
   return (
     <div className="overflow-hidden rounded-[24px] bg-white">
-      <div className="relative h-72 overflow-hidden md:h-80">
+      <div className={`relative overflow-hidden ${compact ? "h-56" : "h-72 md:h-80"}`}>
         <img src={selected.image} alt="" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(24,19,29,.9),transparent_62%)]" />
         <div className="absolute bottom-5 left-5 right-5 text-white">
           <p className="text-sm font-bold uppercase tracking-[0.16em] text-white/68">{selected.label}</p>
-          <h2 className="mt-2 font-serif text-3xl font-bold leading-tight">{selected.headline}</h2>
+          <h2 className={`${compact ? "text-2xl" : "text-3xl"} mt-2 font-serif font-bold leading-tight`}>{selected.headline}</h2>
         </div>
       </div>
       <div className="grid gap-3 p-4">
-        {selected.moments.map((moment, index) => (
+        {selected.moments.slice(0, compact ? 3 : selected.moments.length).map((moment, index) => (
           <div key={moment} className="flex items-center gap-3 rounded-2xl p-3" style={{ background: index === 0 ? selected.soft : "#faf6f2" }}>
             <div className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: selected.color }}>
               {index + 1}
