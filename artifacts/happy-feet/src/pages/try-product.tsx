@@ -128,11 +128,11 @@ export default function TryProduct() {
               StudioFlow product preview
             </Badge>
             <h1 className="font-serif text-5xl font-bold leading-[1.02] md:text-7xl">
-              Let a dance studio feel organized before they sign up.
+              Run your dance studio from one beautiful workspace.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-7 text-white/80 md:text-lg">
-              A story-first demo for owners and instructors: show the pain, show the flow,
-              then invite them into a real portal workspace.
+              StudioFlow helps studios publish classes, collect registrations, track payments,
+              manage rosters, and give instructors the clarity they need before class starts.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="rounded-full bg-white px-8 text-[#18131d] shadow-xl hover:bg-white/90">
