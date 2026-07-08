@@ -16,67 +16,67 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-type StoryKey = "owner" | "instructor" | "student";
+type StoryKey = "instructor" | "student" | "parent";
 
 const stories = {
-  owner: {
-    label: "Studio owner",
-    headline: "From scattered messages to one calm studio workspace.",
-    pain: "Before class day, you are checking DMs, Venmo, spreadsheets, class posts, and instructor texts.",
-    promise: "StudioFlow gathers classes, registrations, payments, images, and rosters into one place.",
+  instructor: {
+    label: "Instructor",
+    headline: "Teach more. Chase fewer messages.",
+    pain: "Before class day, you are checking DMs, payment screenshots, class lists, and who still needs the address.",
+    promise: "StudioFlow gives instructors one place to publish classes, collect requests, see rosters, and follow up.",
     image: "https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&w=900&q=85",
     color: "#2f7b6f",
     soft: "#e8f4ef",
-    toolTitle: "Owner command center",
-    toolSubtitle: "A launch-ready view of classes, payments, and what needs attention.",
-    visualTitle: "Tonight's studio health",
-    visualNote: "Two payments need follow-up before the showcase rehearsal.",
-    proof: ["Class page is live", "Roster is export-ready", "Payment follow-up is visible"],
-    moments: ["Publish a class", "See who registered", "Mark payment received", "Export the roster"],
+    toolTitle: "Instructor workspace",
+    toolSubtitle: "A focused home for classes, student requests, payment status, and follow-up.",
+    visualTitle: "Tonight's class is ready",
+    visualNote: "Two students need payment follow-up before rehearsal.",
+    proof: ["Class page is live", "Roster is ready", "Follow-up is visible"],
+    moments: ["Publish a class", "See who registered", "Mark payment received", "Message the roster"],
     previewRows: [
-      ["Spring Showcase Team", "24 registered", "4 pending"],
-      ["Kids Bollywood Basics", "14 registered", "Almost full"],
+      ["Spring Showcase Team", "24 students", "4 pending"],
+      ["Kids Bollywood Basics", "14 students", "Almost full"],
       ["Private Coaching", "3 requests", "Needs reply"],
-    ],
-  },
-  instructor: {
-    label: "Instructor",
-    headline: "Walk into the room knowing exactly who is coming.",
-    pain: "Instructors lose time asking for rosters, payment updates, class notes, and who needs extra help.",
-    promise: "Every class has a clear roster, notes, student context, and upcoming schedule.",
-    image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=85",
-    color: "#bf4b3a",
-    soft: "#fff0e9",
-    toolTitle: "Instructor class room",
-    toolSubtitle: "A focused roster with notes, check-in context, and the next rehearsal plan.",
-    visualTitle: "Before class starts",
-    visualNote: "Review student notes and send a reminder without asking admin.",
-    proof: ["Roster opens in one tap", "Student notes are attached", "Reminder is queued"],
-    moments: ["Open today’s roster", "Review notes", "Send a reminder", "Prepare check-in"],
-    previewRows: [
-      ["Maya Shah", "Paid", "Needs front-row spacing"],
-      ["Ari Patel", "Pending", "Parent asked about costume"],
-      ["Neha Rao", "Paid", "Confident with chorus"],
     ],
   },
   student: {
     label: "Student",
-    headline: "Students book without needing a back-and-forth conversation.",
-    pain: "Interested students ask where, when, how much, what level, and how to pay.",
-    promise: "Your public page answers the question, captures the request, and starts the follow-up.",
-    image: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=900&q=85",
-    color: "#7c5cff",
-    soft: "#f0edff",
-    toolTitle: "Student booking flow",
-    toolSubtitle: "A polished public page where a dancer can choose, register, and know what happens next.",
-    visualTitle: "Registration without confusion",
-    visualNote: "The student sees level, price, location, and payment guidance before submitting.",
+    headline: "Know what to book and what happens next.",
+    pain: "Students often need to ask where class is, what level it is, how much it costs, and how to pay.",
+    promise: "Each class page makes the schedule, level, price, and next steps simple before they register.",
+    image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=85",
+    color: "#bf4b3a",
+    soft: "#fff0e9",
+    toolTitle: "Student booking view",
+    toolSubtitle: "A polished class page where students can understand the class and request a spot quickly.",
+    visualTitle: "Booking feels simple",
+    visualNote: "Students see level, price, time, and payment guidance before submitting.",
     proof: ["Class details are clear", "Request is captured", "Next steps are sent"],
-    moments: ["Find the right class", "Register quickly", "Receive next steps", "Stay connected"],
+    moments: ["Find the right class", "Register quickly", "Get next steps", "Stay connected"],
     previewRows: [
       ["Bollywood Beginner", "Sat 11:00 AM", "$25 drop-in"],
       ["Kids Showcase Team", "Sun 10:00 AM", "$180 batch"],
       ["BollyHop Lab", "Thu 7:30 PM", "$95 program"],
+    ],
+  },
+  parent: {
+    label: "Parent / learner",
+    headline: "Keep families and learners clear after they register.",
+    pain: "Parents and learners need reminders, receipts, class info, practice links, and updates in one reliable place.",
+    promise: "StudioFlow keeps class details, messages, payment status, and learning resources easy to find.",
+    image: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=900&q=85",
+    color: "#7c5cff",
+    soft: "#f0edff",
+    toolTitle: "Learner portal",
+    toolSubtitle: "A calm space for class reminders, practice resources, payments, and instructor updates.",
+    visualTitle: "Everything after booking stays clear",
+    visualNote: "Learners know what class they joined, what to practice, and what still needs attention.",
+    proof: ["Class reminder is visible", "Practice link is saved", "Payment status is clear"],
+    moments: ["View class details", "Check reminders", "Watch practice links", "Track payment status"],
+    previewRows: [
+      ["Next class", "Sunday 10:00 AM", "Confirmed"],
+      ["Practice video", "Showcase chorus", "Ready"],
+      ["Payment", "$180 batch", "Pending"],
     ],
   },
 } satisfies Record<StoryKey, {
@@ -96,7 +96,7 @@ const stories = {
   previewRows: string[][];
 }>;
 
-const storyOrder: StoryKey[] = ["owner", "instructor", "student"];
+const storyOrder: StoryKey[] = ["instructor", "student", "parent"];
 
 const flow = [
   { icon: ImagePlus, title: "Create the offer", body: "Add the class, image, price, schedule, instructor, and details in a few minutes." },
@@ -105,7 +105,7 @@ const flow = [
 ];
 
 export default function TryProduct() {
-  const [activeStory, setActiveStory] = useState<StoryKey>("owner");
+  const [activeStory, setActiveStory] = useState<StoryKey>("instructor");
   const selected = stories[activeStory];
 
   return (
@@ -128,11 +128,11 @@ export default function TryProduct() {
               StudioFlow product preview
             </Badge>
             <h1 className="font-serif text-5xl font-bold leading-[1.02] md:text-7xl">
-              Run your dance studio from one beautiful workspace.
+              Run your classes from one beautiful workspace.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-7 text-white/80 md:text-lg">
-              StudioFlow helps studios publish classes, collect registrations, track payments,
-              manage rosters, and give instructors the clarity they need before class starts.
+              StudioFlow helps instructors publish classes, collect registrations, track payments,
+              manage student lists, and keep learners informed before and after class.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="rounded-full bg-white px-8 text-[#18131d] shadow-xl hover:bg-white/90">
@@ -160,13 +160,13 @@ export default function TryProduct() {
       <section id="story" className="px-4 py-16 md:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-9 max-w-4xl text-center">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#bf4b3a]">One platform, every role</p>
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#bf4b3a]">Built for class communities</p>
             <h2 className="mt-3 font-serif text-4xl font-bold leading-tight md:text-6xl">
-              The studio runs smoother when everyone sees exactly what they need.
+              Instructors, students, and families stay aligned from booking to class day.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#665d6d]">
-              StudioFlow connects the public booking page, admin dashboard, instructor prep,
-              student records, and payment follow-up into one beautiful workflow.
+              StudioFlow connects booking pages, class rosters, student records, payment follow-up,
+              and learner updates into one smooth workflow.
             </p>
           </div>
 
@@ -174,7 +174,7 @@ export default function TryProduct() {
             {[
               "Publish classes",
               "Collect registrations",
-              "Prepare instructors",
+              "Prepare class rosters",
               "Track payments",
             ].map((item, index) => (
               <div key={item} className="flex items-center gap-3 rounded-2xl bg-[#fbf7f1] p-3">
@@ -219,7 +219,7 @@ export default function TryProduct() {
           <div className="mb-8 text-center">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#bf4b3a]">The simple promise</p>
             <h2 className="mx-auto mt-3 max-w-3xl font-serif text-4xl font-bold leading-tight md:text-6xl">
-              A studio should spend more time teaching and less time holding the business together.
+              Instructors should spend more time teaching and less time holding class logistics together.
             </h2>
           </div>
           <div className="grid gap-4 md:grid-cols-3">

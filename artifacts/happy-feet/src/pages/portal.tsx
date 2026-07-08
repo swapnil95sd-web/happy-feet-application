@@ -25,7 +25,7 @@ const tabs = [
 const tasks = [
   { title: "Add your first class", body: "Name, instructor, schedule, price, capacity, and class image.", done: true },
   { title: "Share your booking page", body: "Students get one link with everything they need to register.", done: true },
-  { title: "Invite an instructor", body: "Give instructors access to rosters and class notes.", done: false },
+  { title: "Prepare your roster", body: "Keep registered students, notes, and payment status together.", done: false },
   { title: "Confirm payment method", body: "Track paid, pending, waived, and refunded students.", done: false },
 ];
 
@@ -45,7 +45,7 @@ const students = [
 export default function Portal() {
   const [active, setActive] = useState("launch");
   const { user, profile } = useAuth();
-  const displayName = profile?.fullName || user?.email?.split("@")[0] || "Studio owner";
+  const displayName = profile?.fullName || user?.email?.split("@")[0] || "Instructor";
 
   return (
     <div className="min-h-screen bg-[#f8f4ef] text-[#18131d]">
@@ -59,8 +59,8 @@ export default function Portal() {
                   Welcome, {displayName}.
                 </h1>
                 <p className="mt-4 max-w-xl text-base leading-7 text-white/72">
-                  This is the workspace a new studio sees after account creation:
-                  publish offers, track students, manage payments, and prepare every class from one place.
+                  This is the workspace an instructor sees after account creation:
+                  publish classes, track students, manage payments, and keep every class organized from one place.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -115,7 +115,7 @@ function LaunchPlan() {
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#bf4b3a]">Launch plan</p>
-          <h2 className="mt-2 font-serif text-4xl font-bold">Your studio is almost ready to share.</h2>
+          <h2 className="mt-2 font-serif text-4xl font-bold">Your class hub is almost ready to share.</h2>
         </div>
         <Button className="w-fit rounded-full bg-[#18131d]">Preview public page</Button>
       </div>
