@@ -160,14 +160,30 @@ export default function TryProduct() {
       <section id="story" className="px-4 py-16 md:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-9 max-w-4xl text-center">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#bf4b3a]">Choose the point of view</p>
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#bf4b3a]">One platform, every role</p>
             <h2 className="mt-3 font-serif text-4xl font-bold leading-tight md:text-6xl">
-              Make each person instantly understand what changes for them.
+              The studio runs smoother when everyone sees exactly what they need.
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#665d6d]">
-              Click a role and the story, image, and tool preview all change. Owners see control,
-              instructors see readiness, and students see an easy path to book.
+              StudioFlow connects the public booking page, admin dashboard, instructor prep,
+              student records, and payment follow-up into one beautiful workflow.
             </p>
+          </div>
+
+          <div className="mb-6 grid gap-3 rounded-[28px] border border-[#e8ded6] bg-white/72 p-3 shadow-sm md:grid-cols-4">
+            {[
+              "Publish classes",
+              "Collect registrations",
+              "Prepare instructors",
+              "Track payments",
+            ].map((item, index) => (
+              <div key={item} className="flex items-center gap-3 rounded-2xl bg-[#fbf7f1] p-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#18131d] text-xs font-bold text-white">
+                  {index + 1}
+                </div>
+                <p className="text-sm font-bold text-[#18131d]">{item}</p>
+              </div>
+            ))}
           </div>
 
           <div className="grid gap-3 md:grid-cols-3">
@@ -186,6 +202,9 @@ export default function TryProduct() {
                 >
                   <p className={`text-sm font-bold ${active ? "text-white/60" : "text-[#bf4b3a]"}`}>{item.label}</p>
                   <p className={`mt-3 text-lg font-semibold leading-6 ${active ? "text-white" : "text-[#18131d]"}`}>{item.headline}</p>
+                  <p className={`mt-4 text-sm font-semibold ${active ? "text-white/62" : "text-[#665d6d]"}`}>
+                    {item.moments.slice(0, 2).join(" · ")}
+                  </p>
                 </button>
               );
             })}
