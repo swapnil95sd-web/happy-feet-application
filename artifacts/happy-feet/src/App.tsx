@@ -8,6 +8,7 @@ import Home from "@/pages/home";
 import About from "@/pages/about";
 import Admin from "@/pages/admin";
 import PlatformAdmin from "@/pages/platform";
+import TryProduct from "@/pages/try-product";
 import { AuthProvider, type StudioRole, useAuth } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import type { ComponentType, FormEvent } from "react";
@@ -134,6 +135,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/about" component={About} />
+      <Route path="/try" component={TryProduct} />
       <Route path="/portal">
         <Redirect to="/#classes" />
       </Route>

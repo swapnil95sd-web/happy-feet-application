@@ -47,6 +47,7 @@ export function Navigation() {
   const links: NavLink[] = [
     { type: "button", label: "Book Class", section: "classes" },
     { type: "button", label: "Meet Instructor", section: "instructor" },
+    { type: "link", label: "Try Demo", href: "/try" },
     { type: "link", label: "About Us", href: "/about" },
   ];
 
