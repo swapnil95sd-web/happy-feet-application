@@ -122,30 +122,36 @@ export function Navigation() {
           {!isLoading && (
             isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <Link href="/admin" className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-secondary/90">
+                <a href="/admin" className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
                   <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
-                </Link>
+                  Admin Dashboard
+                </a>
                 <Link href="/platform" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
                   Platform
                 </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                    <button className="flex items-center gap-2 rounded-full border border-border bg-card p-1 shadow-sm transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                       <Avatar className="h-8 w-8">
                         {user?.user_metadata?.avatar_url && <AvatarImage src={user.user_metadata.avatar_url} alt={displayName} />}
-                        <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-semibold">
+                        <AvatarFallback className="text-xs font-semibold text-white" style={{ backgroundColor: studio.secondaryColor }}>
                           {initials}
                         </AvatarFallback>
                       </Avatar>
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuLabel className="font-normal">
-                      <p className="text-sm font-medium">{displayName}</p>
+                  <DropdownMenuContent align="end" className="w-56 bg-background text-foreground">
+                    <DropdownMenuLabel className="font-normal text-foreground">
+                      <p className="text-sm font-medium text-foreground">{displayName}</p>
                       {profile?.role && <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <a href="/admin" className="cursor-pointer">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Admin Dashboard
+                      </a>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
                       Log out
@@ -199,20 +205,20 @@ export function Navigation() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
                         {user?.user_metadata?.avatar_url && <AvatarImage src={user.user_metadata.avatar_url} />}
-                        <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">{initials}</AvatarFallback>
+                        <AvatarFallback className="text-xs text-white" style={{ backgroundColor: studio.secondaryColor }}>{initials}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="text-sm font-medium">{displayName}</p>
                         {profile?.role && <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>}
                       </div>
                     </div>
-                    <Link
+                    <a
                       href="/admin"
-                      className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                      className="flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
                     >
                       <LayoutDashboard className="h-4 w-4" />
-                      Admin dashboard
-                    </Link>
+                      Admin Dashboard
+                    </a>
                     <Link
                       href="/platform"
                       className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
