@@ -137,9 +137,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/about" component={About} />
       <Route path="/try" component={TryProduct} />
-      <Route path="/portal">
-        <ProtectedRoute component={Portal} />
-      </Route>
+      <Route path="/portal" component={Portal} />
       <Route path="/admin">
         <ProtectedRoute component={Admin} roles={["admin"]} />
       </Route>
