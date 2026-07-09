@@ -10,6 +10,7 @@ import Admin from "@/pages/admin";
 import PlatformAdmin from "@/pages/platform";
 import TryProduct from "@/pages/try-product";
 import Portal from "@/pages/portal";
+import PublicProfile from "@/pages/public-profile";
 import { AuthProvider, type StudioRole, useAuth } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import type { ComponentType, FormEvent } from "react";
@@ -138,6 +139,8 @@ function Router() {
       <Route path="/about" component={About} />
       <Route path="/try" component={TryProduct} />
       <Route path="/portal" component={Portal} />
+      <Route path="/beyondeight/:slug" component={PublicProfile} />
+      <Route path="/beyond8/:slug" component={PublicProfile} />
       <Route path="/admin">
         <ProtectedRoute component={Admin} roles={["admin"]} />
       </Route>
@@ -151,11 +154,15 @@ function Router() {
 
 function AppContent() {
   const [location] = useLocation();
-  const isBeyond8Landing = location === "/try";
+  const hidesMainNavigation =
+    location === "/try" ||
+    location === "/portal" ||
+    location.startsWith("/beyondeight/") ||
+    location.startsWith("/beyond8/");
 
   return (
     <div className="min-h-[100dvh] flex flex-col">
-      {!isBeyond8Landing && <Navigation />}
+      {!hidesMainNavigation && <Navigation />}
       <main className="flex-1">
         <Router />
       </main>
