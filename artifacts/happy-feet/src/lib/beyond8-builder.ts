@@ -48,7 +48,7 @@ export type BuilderState = {
   reviews: Review[];
 };
 
-export const storageKey = "beyond8-phase-one-builder";
+export const storageKey = "beyond8-phase-one-builder-v2";
 
 export const styleOptions = ["Bollywood", "Semi-classical", "Hip-hop", "Kids", "Wedding", "Fitness"];
 
@@ -68,8 +68,8 @@ export const defaultBuilderState: BuilderState = {
   location: "New York, NY",
   studioName: "Tanvi Dance Academy",
   slug: "tanvi",
-  headline: "Bollywood classes with stage energy, clean technique, and a community that feels personal.",
-  bio: "Tanvi helps dancers feel expressive, confident, and prepared. Her classes blend joyful choreography with clear coaching, so beginners feel welcomed and returning dancers keep growing.",
+  headline: "Bollywood training for dancers who want confidence, clarity, and stage-ready energy.",
+  bio: "Tanvi designs classes that feel welcoming, structured, and performance-ready. Students get clear coaching, expressive choreography, and an organized booking experience from the first click.",
   styles: ["Bollywood", "Semi-classical", "Kids"],
   studioLocations: "Manhattan studio, Jersey City studio, online private coaching",
   services: "Workshops\nPrivate coaching\nWedding choreography\nShowcase team training",
@@ -86,7 +86,7 @@ export const defaultBuilderState: BuilderState = {
       location: "Manhattan",
       price: "$25",
       capacity: "24",
-      description: "A high-energy class for new dancers who want clean foundations and choreography that feels great.",
+      description: "A welcoming class for new dancers who want clean foundations, musicality, and a polished routine.",
     },
     {
       id: 2,
@@ -95,7 +95,7 @@ export const defaultBuilderState: BuilderState = {
       location: "Jersey City",
       price: "$180",
       capacity: "18",
-      description: "A confidence-building program for kids preparing a polished showcase routine.",
+      description: "A structured kids program focused on rhythm, confidence, teamwork, and showcase preparation.",
     },
     {
       id: 3,
@@ -104,7 +104,7 @@ export const defaultBuilderState: BuilderState = {
       location: "Online",
       price: "$95",
       capacity: "12",
-      description: "Learn a joyful, camera-ready routine for sangeet, reception, or family performances.",
+      description: "A focused choreography intensive for sangeet, reception, and family performance moments.",
     },
   ],
   instructors: [
